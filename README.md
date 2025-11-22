@@ -42,13 +42,13 @@
 ## 🚀 Quick Start
 
 ### Online Version
-Visit [https://your-deployment-url.com](https://your-deployment-url.com) to use ViVi Buddy instantly - no installation required!
+Use ViVi Buddy locally by following the installation instructions below.
 
 ### Local Development
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/vivi-buddy.git
+git clone https://github.com/sterlenjohnson/ViVi-Buddy.git
 cd vivi-buddy
 
 # Install dependencies
@@ -129,8 +129,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📬 Contact
 
-- GitHub Issues: [Report bugs or request features](https://github.com/yourusername/vivi-buddy/issues)
-- Discussions: [Join the community](https://github.com/yourusername/vivi-buddy/discussions)
+- GitHub Issues: [Report bugs or request features](https://github.com/sterlenjohnson/ViVi-Buddy/issues)
+- Discussions: [Join the community](https://github.com/sterlenjohnson/ViVi-Buddy/discussions)
 
 ---
 
