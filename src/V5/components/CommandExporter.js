@@ -2,18 +2,33 @@ import React, { useState } from 'react';
 import { Copy, Terminal, AlertTriangle } from 'lucide-react';
 
 const CommandExporter = ({ model, hardware, isUnified }) => {
-    const [modelPath, setModelPath] = useState(`models/${model.name.toLowerCase().replace(/\s+/g, '-')}.gguf`);
+    const inferenceSoftware = hardware.inferenceSoftware || 'llama.cpp';
+
+    const [modelPath, setModelPath] = useState(() => {
+        if (inferenceSoftware === 'ollama') {
+            return model.name.toLowerCase().replace(/\s+/g, '-');
+        }
+        return `models/${model.name.toLowerCase().replace(/\s+/g, '-')}.gguf`;
+    });
     const [copied, setCopied] = useState(false);
     const [flashAttention, setFlashAttention] = useState(true);
 
     const { gpuLayers, contextLength } = model;
     const { operatingSystem, chipType, gpuList } = hardware;
-    const inferenceSoftware = hardware.inferenceSoftware || 'llama.cpp';
 
     // Intel Mac warning logic
     const isIntelMac = operatingSystem === 'macos' && chipType === 'intel';
     const showLMStudioWarning = isIntelMac && inferenceSoftware === 'lmstudio';
     const showOllamaNote = isIntelMac && inferenceSoftware === 'ollama';
+
+    // Update modelPath when software or model name changes
+    React.useEffect(() => {
+        if (inferenceSoftware === 'ollama') {
+            setModelPath(model.name.toLowerCase().replace(/\s+/g, '-'));
+        } else {
+            setModelPath(`models/${model.name.toLowerCase().replace(/\s+/g, '-')}.gguf`);
+        }
+    }, [inferenceSoftware, model.name]);
 
     const generateCommand = () => {
         // LM Studio Intel Mac check
@@ -25,7 +40,7 @@ const CommandExporter = ({ model, hardware, isUnified }) => {
 
         // Ollama
         if (inferenceSoftware === 'ollama') {
-            let cmd = `ollama run ${model.name.toLowerCase().replace(/\s+/g, '-')}`;
+            let cmd = `ollama run ${modelPath}`;
 
             if (showOllamaNote) {
                 cmd = `# Intel Mac: Limited GPU support\n# Running in CPU mode\n` + cmd;

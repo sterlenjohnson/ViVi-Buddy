@@ -23,10 +23,21 @@ export const getActivationPerLayerGB = (model) => {
     return (model.batchSize * model.hiddenSize * 4 * 4) / (1024 ** 3);
 };
 
-export const getMemoryOverhead = (gpuList, systemRAMAmount) => {
-    const baseOverhead = 0.5;
-    const totalVRAM = gpuList.reduce((acc, gpu) => acc + gpu.vram, 0);
-    return baseOverhead + ((totalVRAM + systemRAMAmount) / 200);
+export const getMemoryOverhead = (gpuList, systemRAMAmount, operatingSystem) => {
+    let baseOverhead = 1.0; // Default
+
+    if (operatingSystem === 'windows') {
+        // Windows is heavier on RAM and VRAM
+        baseOverhead = 2.5 + (systemRAMAmount * 0.05);
+    } else if (operatingSystem === 'macos') {
+        // macOS uses significant RAM for the OS + Unified Memory management
+        baseOverhead = 3.0 + (systemRAMAmount * 0.02);
+    } else {
+        // Linux is generally lighter
+        baseOverhead = 0.8 + (systemRAMAmount * 0.01);
+    }
+
+    return baseOverhead;
 };
 
 export const getOffloadSpeedFactor = (ramSpeed, ramClRating, storageType, showDetailedSpecs) => {
@@ -39,7 +50,8 @@ export const getOffloadSpeedFactor = (ramSpeed, ramClRating, storageType, showDe
         'SATA': 0.5,
         'NVMeGen3': 0.8,
         'NVMeGen4': 1.0,
-        'NVMeGen5': 1.3
+        'NVMeGen5': 1.3,
+        'MicroSD': 0.05
     };
     const storageFactor = showDetailedSpecs ? (storageSpeedMap[storageType] || 1.0) : 1.0;
 
@@ -54,8 +66,11 @@ export const getPerformanceMultiplier = (
     chipType,
     cpuCores = 8,
     cpuThreads = 16,
-    totalVRAM = 0
+    totalVRAM = 0,
+    inferenceSoftware = 'ollama'
 ) => {
+    let multiplier = 1.0;
+
     // CPU-only mode (no GPU)
     if (totalVRAM === 0) {
         // Thread efficiency: optimal is ~1.5x cores
@@ -63,29 +78,51 @@ export const getPerformanceMultiplier = (
         const threadEfficiency = Math.min(1.0, optimalThreads / Math.max(1, cpuThreads));
 
         // Base CPU multiplier: 0.05x - 0.2x (much slower than GPU)
-        const baseCPUMultiplier = 0.1;
-        const cpuMultiplier = baseCPUMultiplier * threadEfficiency;
+        let baseCPUMultiplier = 0.1;
 
-        return Math.max(0.02, cpuMultiplier); // Minimum 0.02x (50x slower)
+        // Architecture adjustments
+        if (chipType === 'arm64' && operatingSystem !== 'macos') {
+            // Raspberry Pi / Generic ARM is significantly slower than desktop x86
+            baseCPUMultiplier = 0.02;
+        } else if (chipType === 'intel' || chipType === 'amd') {
+            // Desktop x86 - check for high core counts
+            if (cpuCores >= 12) baseCPUMultiplier = 0.15;
+            if (cpuCores >= 16) baseCPUMultiplier = 0.2;
+        }
+
+        multiplier = baseCPUMultiplier * threadEfficiency;
+        return Math.max(0.01, multiplier);
     }
 
     // GPU/Hybrid modes
     if (isUnified) {
         if (operatingSystem === 'macos' && chipType === 'appleSilicon') {
-            return 1.2; // Apple Silicon unified memory advantage
+            multiplier = 1.2; // Apple Silicon unified memory advantage
         }
-        return 1.0; // Other unified memory systems
+    } else {
+        // Discrete GPU scaling
+        if (numGPUs === 1) {
+            multiplier = 1.0;
+        } else if (numGPUs === 2) {
+            multiplier = 1.8; // Dual GPU with some overhead
+        } else if (numGPUs >= 3) {
+            multiplier = 1.7 + (numGPUs - 2) * 0.3; // Multi-GPU with diminishing returns
+        }
     }
 
-    if (numGPUs === 1) {
-        return 1.0; // Single GPU baseline
-    } else if (numGPUs === 2) {
-        return 1.8; // Dual GPU with some overhead
-    } else if (numGPUs >= 3) {
-        return 1.7 + (numGPUs - 2) * 0.3; // Multi-GPU with diminishing returns
+    // Software specific adjustments
+    if (inferenceSoftware === 'vllm') {
+        multiplier *= 1.2; // Optimized kernels
+    } else if (inferenceSoftware === 'lmstudio') {
+        multiplier *= 0.95; // GUI overhead
     }
 
-    return 1.0; // Fallback
+    // OS Overhead for GPU inference
+    if (operatingSystem === 'windows') {
+        multiplier *= 0.9; // WDDM overhead
+    }
+
+    return multiplier;
 };
 
 // VRAM Overflow Penalty (GPU memory exceeded, offloading to CPU RAM)

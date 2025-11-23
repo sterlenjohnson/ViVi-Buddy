@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Maximize, Save, Upload, Lock, Unlock } from 'lucide-react';
+import Logo from './components/Logo';
+import { Save, Upload, Lock, Unlock } from 'lucide-react';
 import HardwareConfig from './components/HardwareConfig';
 import ModelList from './components/ModelList';
 import ResultsPanel from './components/ResultsPanel';
@@ -19,6 +20,58 @@ import {
     calculatePerGpuUsage
 } from './utils/calculations';
 
+const hardwarePresets = [
+    {
+        group: 'NVIDIA', options: [
+            { label: 'RTX 4090 24GB', value: 'rtx4090' },
+            { label: 'RTX 3090 24GB', value: 'rtx3090' },
+            { label: 'RTX 4070 Ti 12GB', value: 'rtx4070ti' },
+            { label: 'RTX 4060 Ti 16GB', value: 'rtx4060ti' },
+            { label: 'RTX 3060 12GB', value: 'rtx3060' },
+        ]
+    },
+    {
+        group: 'AMD', options: [
+            { label: 'RX 7900 XTX 24GB', value: 'rx7900xtx' },
+            { label: 'RX 6800 XT 16GB', value: 'rx6800xt' },
+        ]
+    },
+    {
+        group: 'Intel Arc', options: [
+            { label: 'Arc A770 16GB', value: 'arca770' },
+            { label: 'Arc A750 8GB', value: 'arca750' },
+        ]
+    },
+    {
+        group: 'Mac', options: [
+            { label: 'Studio M3 Ultra 512GB', value: 'macStudioM3Ultra' },
+            { label: 'Studio Ultra 192GB', value: 'macStudioUltra' },
+            { label: 'Pro W6800X 32GB', value: 'macpro2020_w6800x' },
+            { label: 'Pro W5700X 16GB', value: 'macpro2020_w5700x' },
+            { label: 'iMac 5700 XT', value: 'imac_5700xt' },
+            { label: 'iMac Vega 48', value: 'imac_vega48' },
+            { label: 'MBP 5600M 8GB', value: 'macbookpro2019_5600m' },
+            { label: 'MBP 5500M 8GB', value: 'macbookpro2019_5500m' },
+            { label: 'MBP Vega 20', value: 'macbookpro2019_vega20' },
+        ]
+    },
+    {
+        group: 'CPU Presets', options: [
+            { label: 'Ryzen 9 7950X (16c/32t)', value: 'ryzen9' },
+            { label: 'Ryzen 7 7700X (8c/16t)', value: 'ryzen7' },
+            { label: 'Ryzen 5 7600X (6c/12t)', value: 'ryzen5' },
+            { label: 'Ryzen 3 4100 (4c/8t)', value: 'ryzen3' },
+            { label: 'Core i9-14900K (24c/32t)', value: 'corei9' },
+            { label: 'Core i7-14700K (20c/28t)', value: 'corei7' },
+            { label: 'Core i5-14600K (14c/20t)', value: 'corei5' },
+            { label: 'Core i3-14100 (4c/8t)', value: 'corei3' },
+            { label: 'Raspberry Pi 5 (8GB)', value: 'rpi5_8gb' },
+            { label: 'Raspberry Pi 4 (8GB)', value: 'rpi4_8gb' },
+            { label: 'Generic No GPU', value: 'noGPU' },
+        ]
+    },
+];
+
 const VRAMVisualizerV5 = () => {
     // --- STATE ---
     const [operatingSystem, setOperatingSystem] = useState('macos');
@@ -26,6 +79,7 @@ const VRAMVisualizerV5 = () => {
 
     // Replaced single VRAM/GPU state with gpuList
     const [gpuList, setGpuList] = useState([{ id: 1, name: 'GPU 1', vram: 24, brand: 'nvidia' }]);
+    const [gpuEnabled, setGpuEnabled] = useState(true);
     const [mismatchedEnabled, setMismatchedEnabled] = useState(false);
 
     // Legacy state wrappers for backward compatibility with HardwareConfig (if needed) or just sync them
@@ -52,7 +106,7 @@ const VRAMVisualizerV5 = () => {
 
     // --- CONSTANTS ---
     const isUnified = operatingSystem === 'macos' && chipType === 'appleSilicon';
-    const hasGPU = isUnified || (operatingSystem !== 'macos' || chipType !== 'intel');
+    const hasGPU = isUnified || gpuEnabled;
 
     // --- GPU ACTIONS ---
     const setNumGPUs = (num) => {
@@ -90,36 +144,61 @@ const VRAMVisualizerV5 = () => {
 
     // --- HARDWARE PRESETS ---
     const applyHardwarePreset = (preset) => {
+        // Default to enabling GPU for most presets
+        setGpuEnabled(true);
+        setMismatchedEnabled(false); // Reset mismatched state on preset change
+
+        // Default Advanced Specs
+        setRamType('DDR5');
+        setRamSpeed(5600);
+        setGpuVendor('nvidia');
+        setStorageType('NVMeGen4');
+        setRamClRating(36);
+
         switch (preset) {
             case 'rtx4090':
                 setOperatingSystem('linux');
                 setTotalVRAM(24);
                 setNumGPUs(1);
                 setSystemRAMAmount(64);
+                setGpuVendor('nvidia');
+                setRamSpeed(6000);
                 break;
             case 'rtx3090':
                 setOperatingSystem('linux');
                 setTotalVRAM(24);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setGpuVendor('nvidia');
+                setRamType('DDR4');
+                setRamSpeed(3600);
+                setRamClRating(16);
                 break;
             case 'rtx4070ti':
                 setOperatingSystem('linux');
                 setTotalVRAM(12);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setGpuVendor('nvidia');
+                setRamSpeed(6000);
                 break;
             case 'rtx4060ti':
                 setOperatingSystem('linux');
                 setTotalVRAM(16);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setGpuVendor('nvidia');
+                setRamSpeed(5600);
                 break;
             case 'rtx3060':
                 setOperatingSystem('linux');
                 setTotalVRAM(12);
                 setNumGPUs(1);
                 setSystemRAMAmount(16);
+                setGpuVendor('nvidia');
+                setRamType('DDR4');
+                setRamSpeed(3200);
+                setRamClRating(16);
                 break;
             // AMD GPUs
             case 'rx7900xtx':
@@ -127,12 +206,18 @@ const VRAMVisualizerV5 = () => {
                 setTotalVRAM(24);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setGpuVendor('amd');
+                setRamSpeed(6000);
                 break;
             case 'rx6800xt':
                 setOperatingSystem('linux');
                 setTotalVRAM(16);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setGpuVendor('amd');
+                setRamType('DDR4');
+                setRamSpeed(3600);
+                setRamClRating(16);
                 break;
             // Intel Arc
             case 'arca770':
@@ -140,23 +225,35 @@ const VRAMVisualizerV5 = () => {
                 setTotalVRAM(16);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setGpuVendor('intel');
+                setRamType('DDR4');
+                setRamSpeed(3200);
+                setRamClRating(16);
                 break;
             case 'arca750':
                 setOperatingSystem('linux');
                 setTotalVRAM(8);
                 setNumGPUs(1);
                 setSystemRAMAmount(16);
+                setGpuVendor('intel');
+                setRamType('DDR4');
+                setRamSpeed(3200);
+                setRamClRating(16);
                 break;
             // Mac Configurations
             case 'macStudioUltra':
                 setOperatingSystem('macos');
                 setChipType('appleSilicon');
                 setSystemRAMAmount(192);
+                setRamType('LPDDR5'); // Unified
+                setRamSpeed(6400);
                 break;
             case 'macStudioM3Ultra':
                 setOperatingSystem('macos');
                 setChipType('appleSilicon');
                 setSystemRAMAmount(512);
+                setRamType('LPDDR5');
+                setRamSpeed(6400);
                 break;
             case 'macbookpro2019_5500m':
                 setOperatingSystem('macos');
@@ -164,6 +261,9 @@ const VRAMVisualizerV5 = () => {
                 setTotalVRAM(8);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setRamType('DDR4');
+                setRamSpeed(2666);
+                setGpuVendor('amd');
                 break;
             case 'macbookpro2019_vega20':
                 setOperatingSystem('macos');
@@ -171,6 +271,9 @@ const VRAMVisualizerV5 = () => {
                 setTotalVRAM(4);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setRamType('DDR4');
+                setRamSpeed(2400);
+                setGpuVendor('amd');
                 break;
             case 'macbookpro2019_5600m':
                 setOperatingSystem('macos');
@@ -178,6 +281,9 @@ const VRAMVisualizerV5 = () => {
                 setTotalVRAM(8);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setRamType('DDR4');
+                setRamSpeed(2666);
+                setGpuVendor('amd');
                 break;
             case 'macpro2020_w5700x':
                 setOperatingSystem('macos');
@@ -185,6 +291,9 @@ const VRAMVisualizerV5 = () => {
                 setTotalVRAM(16);
                 setNumGPUs(1);
                 setSystemRAMAmount(96);
+                setRamType('DDR4');
+                setRamSpeed(2933);
+                setGpuVendor('amd');
                 break;
             case 'macpro2020_w6800x':
                 setOperatingSystem('macos');
@@ -192,6 +301,9 @@ const VRAMVisualizerV5 = () => {
                 setTotalVRAM(32);
                 setNumGPUs(1);
                 setSystemRAMAmount(96);
+                setRamType('DDR4');
+                setRamSpeed(2933);
+                setGpuVendor('amd');
                 break;
             case 'imac_5700xt':
                 setOperatingSystem('macos');
@@ -199,6 +311,9 @@ const VRAMVisualizerV5 = () => {
                 setTotalVRAM(16);
                 setNumGPUs(1);
                 setSystemRAMAmount(64);
+                setRamType('DDR4');
+                setRamSpeed(2666);
+                setGpuVendor('amd');
                 break;
             case 'imac_vega48':
                 setOperatingSystem('macos');
@@ -206,13 +321,152 @@ const VRAMVisualizerV5 = () => {
                 setTotalVRAM(8);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setRamType('DDR4');
+                setRamSpeed(2666);
+                setGpuVendor('amd');
                 break;
-            // CPU Only
-            case 'noGPU':
+            // CPU Presets
+            case 'ryzen9':
                 setOperatingSystem('linux');
+                setChipType('intel'); // x86
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(64);
+                setCpuCores(16);
+                setCpuThreads(32);
+                setRamType('DDR5');
+                setRamSpeed(6000);
+                setRamClRating(30);
+                break;
+            case 'ryzen7':
+                setOperatingSystem('linux');
+                setChipType('intel');
+                setGpuEnabled(false);
                 setTotalVRAM(0);
                 setNumGPUs(1);
                 setSystemRAMAmount(32);
+                setCpuCores(8);
+                setCpuThreads(16);
+                setRamType('DDR5');
+                setRamSpeed(6000);
+                setRamClRating(30);
+                break;
+            case 'ryzen5':
+                setOperatingSystem('linux');
+                setChipType('intel');
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(32);
+                setCpuCores(6);
+                setCpuThreads(12);
+                setRamType('DDR5');
+                setRamSpeed(5200);
+                setRamClRating(36);
+                break;
+            case 'ryzen3':
+                setOperatingSystem('linux');
+                setChipType('intel');
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(16);
+                setCpuCores(4);
+                setCpuThreads(8);
+                setRamType('DDR4');
+                setRamSpeed(3200);
+                setRamClRating(16);
+                break;
+            case 'corei9':
+                setOperatingSystem('linux');
+                setChipType('intel');
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(64);
+                setCpuCores(24);
+                setCpuThreads(32);
+                setRamType('DDR5');
+                setRamSpeed(6000);
+                setRamClRating(30);
+                break;
+            case 'corei7':
+                setOperatingSystem('linux');
+                setChipType('intel');
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(32);
+                setCpuCores(20);
+                setCpuThreads(28);
+                setRamType('DDR5');
+                setRamSpeed(5600);
+                setRamClRating(32);
+                break;
+            case 'corei5':
+                setOperatingSystem('linux');
+                setChipType('intel');
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(32);
+                setCpuCores(14);
+                setCpuThreads(20);
+                setRamType('DDR5');
+                setRamSpeed(5600);
+                setRamClRating(36);
+                break;
+            case 'corei3':
+                setOperatingSystem('linux');
+                setChipType('intel');
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(16);
+                setCpuCores(4);
+                setCpuThreads(8);
+                setRamType('DDR4');
+                setRamSpeed(3200);
+                setRamClRating(16);
+                break;
+            case 'rpi5_8gb':
+                setOperatingSystem('linux');
+                setChipType('arm64');
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(8);
+                setCpuCores(4);
+                setCpuThreads(4);
+                setRamType('LPDDR4X');
+                setRamSpeed(4267);
+                setStorageType('MicroSD');
+                break;
+            case 'rpi4_8gb':
+                setOperatingSystem('linux');
+                setChipType('arm64');
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(8);
+                setCpuCores(4);
+                setCpuThreads(4);
+                setRamType('LPDDR4');
+                setRamSpeed(3200); // Often 2400/3200 depending on rev
+                setStorageType('MicroSD');
+                break;
+            case 'noGPU':
+                setOperatingSystem('linux');
+                setChipType('intel');
+                setGpuEnabled(false);
+                setTotalVRAM(0);
+                setNumGPUs(1);
+                setSystemRAMAmount(32);
+                setCpuCores(8);
+                setCpuThreads(16);
+                setRamType('DDR4');
+                setRamSpeed(3200);
                 break;
             default:
                 break;
@@ -252,6 +506,11 @@ const VRAMVisualizerV5 = () => {
                 if (model.id !== id) return model;
                 let updatedModel = { ...model, [field]: value };
 
+                // Force CPU mode if no GPU is available
+                if (!hasGPU && field === 'mode' && value !== 'cpuOnly') {
+                    updatedModel.mode = 'cpuOnly';
+                }
+
                 // Re-run optimization if needed
                 if (enforceConstraints || field === 'mode' || field === 'precision' || field === 'contextLength' || field === 'numLayers' || field === 'gpuLayers') {
                     // Ensure gpuLayers doesn't exceed new numLayers
@@ -265,23 +524,52 @@ const VRAMVisualizerV5 = () => {
         });
     };
 
+    // Force CPU mode when GPU is disabled
+    useEffect(() => {
+        if (!hasGPU) {
+            setModels(prev => prev.map(m => ({
+                ...m,
+                mode: 'cpuOnly',
+                gpuLayers: 0
+            })));
+        }
+    }, [hasGPU]);
+
     const applyPreset = (id, preset) => {
         setModels(prev => prev.map(m => {
             if (m.id !== id) return m;
             let newM = { ...m };
-            if (preset === 'speed') {
-                newM.mode = 'gpuOnly';
-                newM.precision = 'q4_k_m';
-                newM.contextLength = 2048;
-            } else if (preset === 'balance') {
-                newM.mode = 'hybrid';
-                newM.precision = 'q5_k_m';
-                newM.contextLength = 4096;
-            } else if (preset === 'context') {
-                newM.mode = 'hybrid';
-                newM.precision = 'q3_k_m';
-                newM.contextLength = 16384;
+
+            // If GPU is disabled, force CPU settings regardless of preset intent
+            if (!hasGPU) {
+                newM.mode = 'cpuOnly';
+                newM.gpuLayers = 0;
+                if (preset === 'speed') {
+                    newM.precision = 'q4_0'; // Faster on CPU
+                    newM.contextLength = 2048;
+                } else if (preset === 'balance') {
+                    newM.precision = 'q4_k_m';
+                    newM.contextLength = 4096;
+                } else if (preset === 'context') {
+                    newM.precision = 'q3_k_m'; // Save RAM for context
+                    newM.contextLength = 8192;
+                }
+            } else {
+                if (preset === 'speed') {
+                    newM.mode = 'gpuOnly';
+                    newM.precision = 'q4_k_m';
+                    newM.contextLength = 2048;
+                } else if (preset === 'balance') {
+                    newM.mode = 'hybrid';
+                    newM.precision = 'q5_k_m';
+                    newM.contextLength = 4096;
+                } else if (preset === 'context') {
+                    newM.mode = 'hybrid';
+                    newM.precision = 'q3_k_m';
+                    newM.contextLength = 16384;
+                }
             }
+
             // Always optimize to update cpuLayers
             newM = optimizeLayerSplit(newM, gpuList, systemRAMAmount, enforceConstraints);
             return newM;
@@ -321,13 +609,13 @@ const VRAMVisualizerV5 = () => {
             totalRamUsage += cpuW;
         });
 
-        const globalOverhead = getMemoryOverhead(gpuList, systemRAMAmount);
+        const globalOverhead = getMemoryOverhead(gpuList, systemRAMAmount, operatingSystem);
         const gpuUsageDetails = calculatePerGpuUsage(models, gpuList);
         const finalRamTotal = totalRamUsage + (globalOverhead * 0.8);
 
         // Calculate total VRAM used across all GPUs
-        const totalVRAMUsed = gpuUsageDetails.reduce((acc, gpu) => acc + gpu.used, 0);
-        const totalVRAMAvailable = gpuList.reduce((acc, gpu) => acc + gpu.vram, 0);
+        const totalVRAMUsed = hasGPU ? gpuUsageDetails.reduce((acc, gpu) => acc + gpu.used, 0) : 0;
+        const totalVRAMAvailable = hasGPU ? gpuList.reduce((acc, gpu) => acc + gpu.vram, 0) : 0;
 
         // Base performance multiplier (hardware-based)
         const basePerformance = getPerformanceMultiplier(
@@ -337,7 +625,8 @@ const VRAMVisualizerV5 = () => {
             chipType,
             cpuCores,
             cpuThreads,
-            totalVRAMAvailable
+            totalVRAMAvailable,
+            inferenceSoftware
         );
 
         // Calculate all penalties
@@ -365,7 +654,7 @@ const VRAMVisualizerV5 = () => {
             totalVRAMUsed,
             totalVRAMAvailable
         };
-    }, [models, gpuList, systemRAMAmount, isUnified, operatingSystem, chipType, cpuCores, cpuThreads, numGPUs, ramSpeed, ramClRating, storageType, showDetailedSpecs]);
+    }, [models, gpuList, systemRAMAmount, isUnified, operatingSystem, chipType, cpuCores, cpuThreads, numGPUs, ramSpeed, ramClRating, storageType, showDetailedSpecs, hasGPU, inferenceSoftware]);
 
     // --- SAVE / LOAD ---
     const saveConfig = () => {
@@ -413,20 +702,72 @@ const VRAMVisualizerV5 = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-white p-2 sm:p-4 font-sans">
-            <div className="max-w-7xl mx-auto">
-                <header className="flex flex-col md:flex-row justify-between items-center mb-4 pb-3 border-b border-slate-700">
-                    <div>
-                        <h1 className="text-3xl font-extrabold text-teal-400 flex items-center gap-2">
-                            <Maximize className="w-8 h-8" /> ViVi Buddy
+        <div className="min-h-screen bg-slate-900 text-white p-2 sm:p-4 font-sans relative overflow-hidden">
+            {/* Circuit Board Background Pattern */}
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{
+                backgroundImage: `radial-gradient(circle at 2px 2px, rgba(45, 212, 191, 0.15) 1px, transparent 0)`,
+                backgroundSize: '40px 40px'
+            }}></div>
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <svg className="absolute w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="circuit-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                            <path d="M10 10 L90 10 M10 50 L90 50 M50 10 L50 90" stroke="#2dd4bf" strokeWidth="0.5" fill="none" />
+                            <circle cx="10" cy="10" r="2" fill="#2dd4bf" />
+                            <circle cx="90" cy="50" r="2" fill="#3b82f6" />
+                            <circle cx="50" cy="90" r="2" fill="#2dd4bf" />
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#circuit-pattern)" />
+                </svg>
+            </div>
+
+            <div className="max-w-7xl mx-auto relative z-10">
+                <header className="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50 rounded-b-xl px-4">
+                    <div className="mt-2 md:mt-0">
+                        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500 flex items-center gap-3">
+                            <Logo className="w-10 h-10" /> ViVi Buddy
                         </h1>
-                        <p className="text-xs text-slate-500 italic ml-10">Video RAM Visualizer</p>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <p className="text-xs text-slate-500 italic ml-14">Video RAM Visualizer</p>
+                        <p className="text-slate-400 text-sm mt-1 ml-1">
                             {isUnified ? 'Unified Memory' : `Discrete GPU (${numGPUs}x)`} | {operatingSystem} | {ramSpeed} MHz
                         </p>
                     </div>
-                    <div className="flex items-center gap-4 mt-4 md:mt-0">
-                        <div className="flex items-center gap-3 px-3 py-2 bg-slate-800 rounded-lg border border-slate-700">
+                    <div className="flex items-center gap-4 mt-4 md:mt-0 flex-wrap justify-center">
+                        <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700 shadow-lg">
+                            <span className="text-xs font-medium text-slate-400">Hardware</span>
+                            <select
+                                onChange={(e) => {
+                                    if (e.target.value) applyHardwarePreset(e.target.value);
+                                    e.target.value = "";
+                                }}
+                                className="bg-slate-900 text-teal-400 text-xs font-bold rounded px-2 py-1 border border-slate-600 focus:outline-none focus:border-teal-500"
+                                defaultValue=""
+                            >
+                                <option value="" disabled>Select Preset...</option>
+                                {hardwarePresets.map(group => (
+                                    <optgroup key={group.group} label={group.group}>
+                                        {group.options.map(opt => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </optgroup>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700 shadow-lg">
+                            <span className="text-xs font-medium text-slate-400">Software</span>
+                            <select
+                                value={inferenceSoftware}
+                                onChange={(e) => setInferenceSoftware(e.target.value)}
+                                className="bg-slate-900 text-teal-400 text-xs font-bold rounded px-2 py-1 border border-slate-600 focus:outline-none focus:border-teal-500"
+                            >
+                                <option value="ollama">Ollama</option>
+                                <option value="llama.cpp">Llama.cpp</option>
+                                <option value="lmstudio">LM Studio</option>
+                                <option value="vllm">vLLM</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700 shadow-lg">
                             <span className={`text-xs font-medium transition-colors ${viewMode === 'basic' ? 'text-purple-400' : 'text-slate-500'}`}>Basic</span>
                             <button
                                 onClick={() => setViewMode(viewMode === 'basic' ? 'advanced' : 'basic')}
@@ -442,168 +783,67 @@ const VRAMVisualizerV5 = () => {
                         </div>
                         <button
                             onClick={() => setEnforceConstraints(!enforceConstraints)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition-colors ${enforceConstraints ? 'bg-green-900/50 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition-colors shadow-lg ${enforceConstraints ? 'bg-green-900/50 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
                         >
-                            {enforceConstraints ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />} Constraints: {enforceConstraints ? 'ON' : 'OFF'}
+                            {enforceConstraints ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                         </button>
-                        <button onClick={saveConfig} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm border border-slate-600 transition-colors">
-                            <Save className="w-4 h-4" /> Save
-                        </button>
-                        <button onClick={loadConfig} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm border border-slate-600 transition-colors">
-                            <Upload className="w-4 h-4" /> Load
-                        </button>
+                        <div className="flex gap-2">
+                            <button onClick={saveConfig} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors shadow-lg" title="Save Config">
+                                <Save className="w-4 h-4" />
+                            </button>
+                            <button onClick={loadConfig} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors shadow-lg" title="Load Config">
+                                <Upload className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                 </header>
 
+                {/* Full Width Results Panel */}
+                <div className="mb-8">
+                    <ResultsPanel
+                        calculations={calculations}
+                        gpuList={gpuList}
+                        systemRAMAmount={systemRAMAmount}
+                        isUnified={isUnified}
+                        cpuCores={cpuCores}
+                        cpuThreads={cpuThreads}
+                        gpuEnabled={gpuEnabled}
+                    />
+                </div>
+
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                     <div className="xl:col-span-1 space-y-6">
-                        <ResultsPanel
-                            calculations={calculations}
-                            gpuList={gpuList}
-                            systemRAMAmount={systemRAMAmount}
-                            isUnified={isUnified}
-                            cpuCores={cpuCores}
-                            cpuThreads={cpuThreads}
-                        />
                         {viewMode === 'advanced' ? (
-                            <>
-                                <div className="mb-4 p-3 bg-slate-700/30 rounded-lg">
-                                    <div className="text-xs font-medium text-slate-300 mb-3">Hardware Presets:</div>
-
-                                    <div className="mb-3">
-                                        <div className="text-xs text-slate-400 mb-1">NVIDIA</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('rtx4090')} className="px-2 py-1 bg-green-600/20 hover:bg-green-600/40 border border-green-500/30 rounded text-xs text-green-300 transition-colors">RTX 4090 24GB</button>
-                                            <button onClick={() => applyHardwarePreset('rtx3090')} className="px-2 py-1 bg-green-600/20 hover:bg-green-600/40 border border-green-500/30 rounded text-xs text-green-300 transition-colors">RTX 3090 24GB</button>
-                                            <button onClick={() => applyHardwarePreset('rtx4070ti')} className="px-2 py-1 bg-yellow-600/20 hover:bg-yellow-600/40 border border-yellow-500/30 rounded text-xs text-yellow-300 transition-colors">RTX 4070 Ti 12GB</button>
-                                            <button onClick={() => applyHardwarePreset('rtx4060ti')} className="px-2 py-1 bg-yellow-600/20 hover:bg-yellow-600/40 border border-yellow-500/30 rounded text-xs text-yellow-300 transition-colors">RTX 4060 Ti 16GB</button>
-                                            <button onClick={() => applyHardwarePreset('rtx3060')} className="px-2 py-1 bg-orange-600/20 hover:bg-orange-600/40 border border-orange-500/30 rounded text-xs text-orange-300 transition-colors">RTX 3060 12GB</button>
-                                        </div>
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <div className="text-xs text-slate-400 mb-1">AMD</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('rx7900xtx')} className="px-2 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 rounded text-xs text-red-300 transition-colors">RX 7900 XTX 24GB</button>
-                                            <button onClick={() => applyHardwarePreset('rx6800xt')} className="px-2 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 rounded text-xs text-red-300 transition-colors">RX 6800 XT 16GB</button>
-                                        </div>
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <div className="text-xs text-slate-400 mb-1">Intel Arc</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('arca770')} className="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 rounded text-xs text-blue-300 transition-colors">Arc A770 16GB</button>
-                                            <button onClick={() => applyHardwarePreset('arca750')} className="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 rounded text-xs text-blue-300 transition-colors">Arc A750 8GB</button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div className="text-xs text-slate-400 mb-1">Mac</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('macStudioM3Ultra')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">Studio M3 Ultra 512GB</button>
-                                            <button onClick={() => applyHardwarePreset('macStudioUltra')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">Studio Ultra 192GB</button>
-                                            <button onClick={() => applyHardwarePreset('macpro2020_w6800x')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">Pro W6800X 32GB</button>
-                                            <button onClick={() => applyHardwarePreset('macpro2020_w5700x')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">Pro W5700X 16GB</button>
-                                            <button onClick={() => applyHardwarePreset('imac_5700xt')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">iMac 5700 XT</button>
-                                            <button onClick={() => applyHardwarePreset('imac_vega48')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">iMac Vega 48</button>
-                                            <button onClick={() => applyHardwarePreset('macbookpro2019_5600m')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">MBP 5600M 8GB</button>
-                                            <button onClick={() => applyHardwarePreset('macbookpro2019_5500m')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">MBP 5500M 8GB</button>
-                                            <button onClick={() => applyHardwarePreset('macbookpro2019_vega20')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">MBP Vega 20</button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div className="text-xs text-slate-400 mb-1">CPU Only</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('noGPU')} className="px-2 py-1 bg-slate-600/20 hover:bg-slate-600/40 border border-slate-500/30 rounded text-xs text-slate-300 transition-colors">No GPU</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <HardwareConfig
-                                    operatingSystem={operatingSystem} setOperatingSystem={setOperatingSystem}
-                                    chipType={chipType} setChipType={setChipType}
-                                    totalVRAM={totalVRAM} setTotalVRAM={setTotalVRAM}
-                                    numGPUs={numGPUs} setNumGPUs={setNumGPUs}
-                                    systemRAMAmount={systemRAMAmount} setSystemRAMAmount={setSystemRAMAmount}
-                                    showDetailedSpecs={showDetailedSpecs} setShowDetailedSpecs={setShowDetailedSpecs}
-                                    gpuVendor={gpuVendor} setGpuVendor={setGpuVendor}
-                                    ramType={ramType} setRamType={setRamType}
-                                    ramSpeed={ramSpeed} setRamSpeed={setRamSpeed}
-                                    storageType={storageType} setStorageType={setStorageType}
-                                    ramClRating={ramClRating} setRamClRating={setRamClRating}
-                                    inferenceSoftware={inferenceSoftware} setInferenceSoftware={setInferenceSoftware}
-                                    isUnified={isUnified} hasGPU={hasGPU}
-                                    mismatchedEnabled={mismatchedEnabled} setMismatchedEnabled={setMismatchedEnabled}
-                                    gpuList={gpuList} updateGpu={updateGpu} addGpu={addGpu} removeGpu={removeGpu}
-                                    cpuCores={cpuCores} setCpuCores={setCpuCores}
-                                    cpuThreads={cpuThreads} setCpuThreads={setCpuThreads}
-                                />
-                            </>
+                            <HardwareConfig
+                                operatingSystem={operatingSystem} setOperatingSystem={setOperatingSystem}
+                                chipType={chipType} setChipType={setChipType}
+                                totalVRAM={totalVRAM} setTotalVRAM={setTotalVRAM}
+                                numGPUs={numGPUs} setNumGPUs={setNumGPUs}
+                                systemRAMAmount={systemRAMAmount} setSystemRAMAmount={setSystemRAMAmount}
+                                showDetailedSpecs={showDetailedSpecs} setShowDetailedSpecs={setShowDetailedSpecs}
+                                gpuVendor={gpuVendor} setGpuVendor={setGpuVendor}
+                                ramType={ramType} setRamType={setRamType}
+                                ramSpeed={ramSpeed} setRamSpeed={setRamSpeed}
+                                storageType={storageType} setStorageType={setStorageType}
+                                ramClRating={ramClRating} setRamClRating={setRamClRating}
+                                isUnified={isUnified} hasGPU={hasGPU}
+                                gpuEnabled={gpuEnabled} setGpuEnabled={setGpuEnabled}
+                                mismatchedEnabled={mismatchedEnabled} setMismatchedEnabled={setMismatchedEnabled}
+                                gpuList={gpuList} updateGpu={updateGpu} addGpu={addGpu} removeGpu={removeGpu}
+                                cpuCores={cpuCores} setCpuCores={setCpuCores}
+                                cpuThreads={cpuThreads} setCpuThreads={setCpuThreads}
+                            />
                         ) : (
-                            <>
-                                <div className="mb-4 p-3 bg-slate-700/30 rounded-lg">
-                                    <div className="text-xs font-medium text-slate-300 mb-3">Hardware Presets:</div>
-
-                                    <div className="mb-3">
-                                        <div className="text-xs text-slate-400 mb-1">NVIDIA</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('rtx4090')} className="px-2 py-1 bg-green-600/20 hover:bg-green-600/40 border border-green-500/30 rounded text-xs text-green-300 transition-colors">RTX 4090 24GB</button>
-                                            <button onClick={() => applyHardwarePreset('rtx3090')} className="px-2 py-1 bg-green-600/20 hover:bg-green-600/40 border border-green-500/30 rounded text-xs text-green-300 transition-colors">RTX 3090 24GB</button>
-                                            <button onClick={() => applyHardwarePreset('rtx4070ti')} className="px-2 py-1 bg-yellow-600/20 hover:bg-yellow-600/40 border border-yellow-500/30 rounded text-xs text-yellow-300 transition-colors">RTX 4070 Ti 12GB</button>
-                                            <button onClick={() => applyHardwarePreset('rtx4060ti')} className="px-2 py-1 bg-yellow-600/20 hover:bg-yellow-600/40 border border-yellow-500/30 rounded text-xs text-yellow-300 transition-colors">RTX 4060 Ti 16GB</button>
-                                            <button onClick={() => applyHardwarePreset('rtx3060')} className="px-2 py-1 bg-orange-600/20 hover:bg-orange-600/40 border border-orange-500/30 rounded text-xs text-orange-300 transition-colors">RTX 3060 12GB</button>
-                                        </div>
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <div className="text-xs text-slate-400 mb-1">AMD</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('rx7900xtx')} className="px-2 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 rounded text-xs text-red-300 transition-colors">RX 7900 XTX 24GB</button>
-                                            <button onClick={() => applyHardwarePreset('rx6800xt')} className="px-2 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 rounded text-xs text-red-300 transition-colors">RX 6800 XT 16GB</button>
-                                        </div>
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <div className="text-xs text-slate-400 mb-1">Intel Arc</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('arca770')} className="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 rounded text-xs text-blue-300 transition-colors">Arc A770 16GB</button>
-                                            <button onClick={() => applyHardwarePreset('arca750')} className="px-2 py-1 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 rounded text-xs text-blue-300 transition-colors">Arc A750 8GB</button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div className="text-xs text-slate-400 mb-1">Mac</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('macStudioM3Ultra')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">Studio M3 Ultra 512GB</button>
-                                            <button onClick={() => applyHardwarePreset('macStudioUltra')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">Studio Ultra 192GB</button>
-                                            <button onClick={() => applyHardwarePreset('macpro2020_w6800x')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">Pro W6800X 32GB</button>
-                                            <button onClick={() => applyHardwarePreset('macpro2020_w5700x')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">Pro W5700X 16GB</button>
-                                            <button onClick={() => applyHardwarePreset('imac_5700xt')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">iMac 5700 XT</button>
-                                            <button onClick={() => applyHardwarePreset('imac_vega48')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">iMac Vega 48</button>
-                                            <button onClick={() => applyHardwarePreset('macbookpro2019_5600m')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">MBP 5600M 8GB</button>
-                                            <button onClick={() => applyHardwarePreset('macbookpro2019_5500m')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">MBP 5500M 8GB</button>
-                                            <button onClick={() => applyHardwarePreset('macbookpro2019_vega20')} className="px-2 py-1 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 rounded text-xs text-purple-300 transition-colors">MBP Vega 20</button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div className="text-xs text-slate-400 mb-1">CPU Only</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick={() => applyHardwarePreset('noGPU')} className="px-2 py-1 bg-slate-600/20 hover:bg-slate-600/40 border border-slate-500/30 rounded text-xs text-slate-300 transition-colors">No GPU</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <BasicModeToggle
-                                    isUnified={isUnified}
-                                    onToggle={toggleUnifiedMemory}
-                                    systemRAMAmount={systemRAMAmount}
-                                    setSystemRAMAmount={setSystemRAMAmount}
-                                    totalVRAM={totalVRAM}
-                                    setTotalVRAM={setTotalVRAM}
-                                    numGPUs={numGPUs}
-                                    setNumGPUs={setNumGPUs}
-                                />
-                            </>
+                            <BasicModeToggle
+                                isUnified={isUnified}
+                                onToggle={toggleUnifiedMemory}
+                                systemRAMAmount={systemRAMAmount}
+                                setSystemRAMAmount={setSystemRAMAmount}
+                                totalVRAM={totalVRAM}
+                                setTotalVRAM={setTotalVRAM}
+                                numGPUs={numGPUs}
+                                setNumGPUs={setNumGPUs}
+                            />
                         )}
                     </div>
 
@@ -620,7 +860,8 @@ const VRAMVisualizerV5 = () => {
                                 chipType,
                                 gpuVendor,
                                 gpuList,
-                                inferenceSoftware
+                                inferenceSoftware,
+                                gpuEnabled
                             }}
                         />
                     </div>
