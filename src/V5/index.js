@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Logo from './components/Logo';
-import { Save, Upload, Lock, Unlock } from 'lucide-react';
+import { Save, Upload, Lock, Unlock, Trash2 } from 'lucide-react';
 import HardwareConfig from './components/HardwareConfig';
 import ModelList from './components/ModelList';
 import ResultsPanel from './components/ResultsPanel';
@@ -19,6 +19,7 @@ import {
     optimizeLayerSplit,
     calculatePerGpuUsage
 } from './utils/calculations';
+import { autoDetectHardware, getDetectionConfidence } from './utils/hardwareDetection';
 
 const hardwarePresets = [
     {
@@ -142,8 +143,122 @@ const VRAMVisualizerV5 = () => {
         setGpuList(prev => prev.map(g => g.id === id ? { ...g, [field]: value } : g));
     };
 
+    const [selectedPresetId, setSelectedPresetId] = useState('');
+
+    // --- CUSTOM PRESETS ---
+    const [customPresets, setCustomPresets] = useState(() => {
+        const saved = localStorage.getItem('vivi_custom_presets');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const saveCustomPreset = () => {
+        const name = prompt("Enter a name for this hardware preset:");
+        if (!name) return;
+
+        const newPreset = {
+            id: `custom_${Date.now()}`,
+            label: name,
+            config: {
+                operatingSystem, chipType, gpuList, mismatchedEnabled,
+                systemRAMAmount, cpuCores, cpuThreads,
+                gpuVendor, ramType, ramSpeed, storageType, ramClRating,
+                gpuEnabled, totalVRAM, numGPUs // Legacy support
+            }
+        };
+
+        const updated = [...customPresets, newPreset];
+        setCustomPresets(updated);
+        localStorage.setItem('vivi_custom_presets', JSON.stringify(updated));
+    };
+
+    const deleteCustomPreset = (id) => {
+        if (window.confirm("Are you sure you want to delete this preset?")) {
+            const updated = customPresets.filter(p => p.id !== id);
+            setCustomPresets(updated);
+            localStorage.setItem('vivi_custom_presets', JSON.stringify(updated));
+        }
+    };
+
+    // --- AUTO-DETECT HARDWARE ---
+    const handleAutoDetect = () => {
+        const detected = autoDetectHardware();
+        const confidence = getDetectionConfidence(detected);
+
+        let message = `🔍 Hardware Detection Results\n\n`;
+
+        if (detected.systemRAM) {
+            message += `RAM: ${detected.systemRAM} GB (detected)\n`;
+            setSystemRAMAmount(detected.systemRAM);
+        } else {
+            message += `RAM: Could not detect\n`;
+        }
+
+        if (detected.cpuCores) {
+            message += `CPU Cores: ${detected.cpuCores} (${detected.cpuThreads} threads)\n`;
+            setCpuCores(detected.cpuCores);
+            setCpuThreads(detected.cpuThreads);
+        }
+
+        if (detected.operatingSystem) {
+            message += `OS: ${detected.operatingSystem}\n`;
+            setOperatingSystem(detected.operatingSystem);
+        }
+
+        if (detected.chipType) {
+            message += `Chip: ${detected.chipType}\n`;
+            setChipType(detected.chipType);
+        }
+
+        if (detected.gpu.detected) {
+            message += `\nGPU Detected:\n`;
+            message += `  Vendor: ${detected.gpu.vendor}\n`;
+            message += `  Renderer: ${detected.gpu.renderer}\n`;
+
+            if (detected.estimatedVRAM) {
+                message += `  Est. VRAM: ${detected.estimatedVRAM} GB\n`;
+                setTotalVRAM(detected.estimatedVRAM);
+            } else {
+                message += `  VRAM: Could not estimate\n`;
+            }
+        } else {
+            message += `\nGPU: Not detected\n`;
+        }
+
+        message += `\nConfidence: ${confidence.level} (${confidence.percentage}%)\n`;
+        message += `\n⚠️ Browser detection is approximate.\nPlease verify the values.`;
+
+        alert(message);
+    };
+
     // --- HARDWARE PRESETS ---
-    const applyHardwarePreset = (preset) => {
+    const applyHardwarePreset = (presetValue) => {
+        setSelectedPresetId(presetValue);
+
+        // Check for Custom Preset
+        if (presetValue.startsWith('custom_')) {
+            const custom = customPresets.find(p => p.id === presetValue);
+            if (custom) {
+                const c = custom.config;
+                setOperatingSystem(c.operatingSystem);
+                setChipType(c.chipType);
+                setGpuList(c.gpuList);
+                setMismatchedEnabled(c.mismatchedEnabled);
+                setSystemRAMAmount(c.systemRAMAmount);
+                setCpuCores(c.cpuCores);
+                setCpuThreads(c.cpuThreads);
+                setGpuVendor(c.gpuVendor);
+                setRamType(c.ramType);
+                setRamSpeed(c.ramSpeed);
+                setStorageType(c.storageType);
+                setRamClRating(c.ramClRating);
+                setGpuEnabled(c.gpuEnabled);
+                // Legacy/derived
+                if (c.totalVRAM !== undefined) setTotalVRAM(c.totalVRAM);
+                if (c.numGPUs !== undefined) setNumGPUs(c.numGPUs);
+            }
+            return;
+        }
+
         // Default to enabling GPU for most presets
         setGpuEnabled(true);
         setMismatchedEnabled(false); // Reset mismatched state on preset change
@@ -155,7 +270,7 @@ const VRAMVisualizerV5 = () => {
         setStorageType('NVMeGen4');
         setRamClRating(36);
 
-        switch (preset) {
+        switch (presetValue) {
             case 'rtx4090':
                 setOperatingSystem('linux');
                 setTotalVRAM(24);
@@ -734,26 +849,55 @@ const VRAMVisualizerV5 = () => {
                         </p>
                     </div>
                     <div className="flex items-center gap-4 mt-4 md:mt-0 flex-wrap justify-center">
-                        <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700 shadow-lg">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700 shadow-lg">
                             <span className="text-xs font-medium text-slate-400">Hardware</span>
-                            <select
-                                onChange={(e) => {
-                                    if (e.target.value) applyHardwarePreset(e.target.value);
-                                    e.target.value = "";
-                                }}
-                                className="bg-slate-900 text-teal-400 text-xs font-bold rounded px-2 py-1 border border-slate-600 focus:outline-none focus:border-teal-500"
-                                defaultValue=""
-                            >
-                                <option value="" disabled>Select Preset...</option>
-                                {hardwarePresets.map(group => (
-                                    <optgroup key={group.group} label={group.group}>
-                                        {group.options.map(opt => (
-                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                        ))}
-                                    </optgroup>
-                                ))}
-                            </select>
+                            <div className="flex items-center gap-1">
+                                <select
+                                    value={selectedPresetId}
+                                    onChange={(e) => applyHardwarePreset(e.target.value)}
+                                    className="bg-slate-900 text-teal-400 text-xs font-bold rounded px-2 py-1 border border-slate-600 focus:outline-none focus:border-teal-500 max-w-[150px]"
+                                >
+                                    <option value="" disabled>Select Preset...</option>
+                                    {customPresets.length > 0 && (
+                                        <optgroup label="User Presets">
+                                            {customPresets.map(p => (
+                                                <option key={p.id} value={p.id}>{p.label}</option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+                                    {hardwarePresets.map(group => (
+                                        <optgroup key={group.group} label={group.group}>
+                                            {group.options.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </optgroup>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={saveCustomPreset}
+                                    className="p-1 bg-slate-700 hover:bg-slate-600 rounded border border-slate-600 text-slate-300 hover:text-white transition-colors"
+                                    title="Save Current Config as Preset"
+                                >
+                                    <Save className="w-3 h-3" />
+                                </button>
+                                {selectedPresetId.startsWith('custom_') && (
+                                    <button
+                                        onClick={() => deleteCustomPreset(selectedPresetId)}
+                                        className="p-1 bg-red-900/30 hover:bg-red-900/50 rounded border border-red-900/50 text-red-400 hover:text-red-300 transition-colors"
+                                        title="Delete Selected Preset"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
+                        <button
+                            onClick={handleAutoDetect}
+                            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-lg border border-purple-500 shadow-lg text-white text-xs font-bold transition-all"
+                            title="Auto-detect hardware using browser APIs"
+                        >
+                            <span>🔍</span> Auto-Detect
+                        </button>
                         <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700 shadow-lg">
                             <span className="text-xs font-medium text-slate-400">Software</span>
                             <select
@@ -781,12 +925,7 @@ const VRAMVisualizerV5 = () => {
                             </button>
                             <span className={`text-xs font-medium transition-colors ${viewMode === 'advanced' ? 'text-teal-400' : 'text-slate-500'}`}>Advanced</span>
                         </div>
-                        <button
-                            onClick={() => setEnforceConstraints(!enforceConstraints)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition-colors shadow-lg ${enforceConstraints ? 'bg-green-900/50 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
-                        >
-                            {enforceConstraints ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                        </button>
+
                         <div className="flex gap-2">
                             <button onClick={saveConfig} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors shadow-lg" title="Save Config">
                                 <Save className="w-4 h-4" />

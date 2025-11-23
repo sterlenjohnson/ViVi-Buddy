@@ -5,8 +5,20 @@ import { colorMap } from '../utils/constants';
 const LabeledInput = ({ label, value, setter, type = 'range', min = 0, max = 100, step = 1, unit = '', color = 'slate', disabled = false, warning = null }) => {
     const handleChange = (e) => setter(Number(e.target.value));
 
+    // Define background colors based on category
+    const bgColorMap = {
+        blue: 'bg-blue-900/20',
+        purple: 'bg-purple-900/20',
+        cyan: 'bg-cyan-900/25',
+        emerald: 'bg-emerald-900/20',
+        indigo: 'bg-indigo-900/20',
+        orange: 'bg-orange-900/20',
+        slate: 'bg-slate-700'
+    };
+    const bgColor = bgColorMap[color] || 'bg-slate-700';
+
     return (
-        <div className={`mb-2 p-2 rounded-lg shadow-inner transition-colors duration-200 ${disabled ? 'bg-slate-800 opacity-50' : 'bg-slate-700'}`}>
+        <div className={`mb-2 p-2 rounded-lg shadow-inner transition-colors duration-200 border-l-2 ${disabled ? 'bg-slate-800 opacity-50' : bgColor}`} style={{ borderColor: colorMap[color] || 'transparent' }}>
             <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-medium text-slate-200">{label}</label>
                 {warning && <span className="text-[10px] text-red-400">{warning}</span>}
@@ -302,6 +314,7 @@ const HardwareConfig = ({
                                         { value: 'amd', label: 'AMD' },
                                         { value: 'intel', label: 'Intel Arc' }
                                     ]}
+                                    color="blue"
                                 />
                             )}
                             <div className="grid grid-cols-2 gap-2">
@@ -317,6 +330,7 @@ const HardwareConfig = ({
                                         { value: 'LPDDR4X', label: 'LPDDR4X' },
                                         { value: 'LPDDR4', label: 'LPDDR4' }
                                     ]}
+                                    color="emerald"
                                 />
                                 <SelectInput
                                     label="Storage Type"
@@ -330,6 +344,7 @@ const HardwareConfig = ({
                                         { value: 'HDD', label: 'HDD' },
                                         { value: 'MicroSD', label: 'MicroSD Card' }
                                     ]}
+                                    color="orange"
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -340,6 +355,7 @@ const HardwareConfig = ({
                                     min={2133}
                                     max={9600}
                                     step={100}
+                                    color="emerald"
                                 />
                                 <LabeledInput
                                     label="RAM CL Rating"
@@ -348,6 +364,7 @@ const HardwareConfig = ({
                                     min={10}
                                     max={40}
                                     step={1}
+                                    color="emerald"
                                 />
                             </div>
                         </div>

@@ -11,9 +11,8 @@ const CommandExporter = ({ model, hardware, isUnified }) => {
         return `models/${model.name.toLowerCase().replace(/\s+/g, '-')}.gguf`;
     });
     const [copied, setCopied] = useState(false);
-    const [flashAttention, setFlashAttention] = useState(true);
 
-    const { gpuLayers, contextLength } = model;
+    const { gpuLayers, contextLength, flashAttention } = model;
     const { operatingSystem, chipType, gpuList } = hardware;
 
     // Intel Mac warning logic
@@ -128,20 +127,6 @@ const CommandExporter = ({ model, hardware, isUnified }) => {
                 </div>
             )}
 
-            {/* LM Studio Toggles */}
-            {inferenceSoftware === 'lmstudio' && !showLMStudioWarning && (
-                <div className="mb-2 flex items-center gap-3 p-2 bg-slate-800/50 rounded text-xs">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={flashAttention}
-                            onChange={(e) => setFlashAttention(e.target.checked)}
-                            className="rounded border-slate-600 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-slate-300">Flash Attention</span>
-                    </label>
-                </div>
-            )}
 
             {/* Model Path Input */}
             <div className="flex gap-2 mb-2">

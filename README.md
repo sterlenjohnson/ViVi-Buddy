@@ -39,6 +39,15 @@
 - **Performance Estimates**: Get relative performance multipliers
 - **Constraint Enforcement**: Auto-optimize layer splits to fit available memory
 
+## 📣 Recent Updates
+
+- **Removed** the green lock (enforce‑constraints) toggle from the top toolbar.
+- **Simplified** Basic Mode UI: now only RAM slider and a new **GPU Backend** selector (Auto, CUDA, Metal, Vulkan, ROCm, SYCL).
+- **Auto‑Detect** hardware button added to the header for quick detection of RAM, CPU cores, OS, chip type, and GPU info.
+- **CLI Export** now includes `--gpu-backend <backend>` flag reflecting the selected backend.
+- **KV‑Cache size** slider added to model cards with colored styling.
+- Updated quality metrics and backend recommendation logic (backend selectable in UI).
+
 ## 🚀 Quick Start
 
 ### Online Version

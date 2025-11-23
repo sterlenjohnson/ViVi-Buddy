@@ -1,7 +1,7 @@
 import React from 'react';
 import { Monitor, Cloud } from 'lucide-react';
 
-const BasicModeToggle = ({ isUnified, onToggle, systemRAMAmount, setSystemRAMAmount, totalVRAM, setTotalVRAM, numGPUs, setNumGPUs }) => {
+const BasicModeToggle = ({ isUnified, onToggle, systemRAMAmount, setSystemRAMAmount, gpuBackend, setGpuBackend }) => {
     return (
         <div className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-2xl border border-slate-700/50 backdrop-blur-sm">
             <h2 className="text-2xl font-bold mb-5 flex items-center gap-3 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
@@ -14,8 +14,8 @@ const BasicModeToggle = ({ isUnified, onToggle, systemRAMAmount, setSystemRAMAmo
                     <button
                         onClick={onToggle}
                         className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${isUnified
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                                : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                            : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
                             }`}
                     >
                         {isUnified ? 'Unified Memory' : 'Discrete GPU'}
@@ -55,63 +55,22 @@ const BasicModeToggle = ({ isUnified, onToggle, systemRAMAmount, setSystemRAMAmo
                 </div>
             </div>
 
+            {/* Backend selector – only shown when discrete GPU mode */}
             {!isUnified && (
-                <>
-                    <div className="mb-4 p-3 rounded-lg shadow-inner bg-slate-700">
-                        <label className="block text-sm font-medium text-slate-200 mb-1">Number of GPUs</label>
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="range"
-                                min={1}
-                                max={8}
-                                step={1}
-                                value={numGPUs}
-                                onChange={(e) => setNumGPUs(Number(e.target.value))}
-                                className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-600"
-                            />
-                            <input
-                                type="number"
-                                min={1}
-                                max={8}
-                                step={1}
-                                value={numGPUs}
-                                onChange={(e) => setNumGPUs(Number(e.target.value))}
-                                className="w-20 rounded px-2 py-1 text-center text-white bg-slate-600"
-                            />
-                            <span className="text-white font-bold min-w-[40px] text-right">Cards</span>
-                        </div>
-                    </div>
-                    <div className="mb-4 p-3 rounded-lg shadow-inner bg-slate-700">
-                        <label className="block text-sm font-medium text-slate-200 mb-1">VRAM per GPU</label>
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="range"
-                                min={0}
-                                max={192}
-                                step={2}
-                                value={totalVRAM}
-                                onChange={(e) => setTotalVRAM(Number(e.target.value))}
-                                className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-600"
-                            />
-                            <input
-                                type="number"
-                                min={0}
-                                max={192}
-                                step={2}
-                                value={totalVRAM}
-                                onChange={(e) => setTotalVRAM(Number(e.target.value))}
-                                className="w-20 rounded px-2 py-1 text-center text-white bg-slate-600"
-                            />
-                            <span className="text-white font-bold min-w-[40px] text-right">GB</span>
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {!isUnified && (
-                <div className="text-xs text-slate-400 bg-slate-900/50 p-3 rounded border border-slate-700/50">
-                    <Cloud className="w-4 h-4 inline mr-1" />
-                    Switch to Advanced mode to configure GPU details
+                <div className="mb-4 p-3 rounded-lg shadow-inner bg-slate-700">
+                    <label className="block text-sm font-medium text-slate-200 mb-1">GPU Backend</label>
+                    <select
+                        value={gpuBackend}
+                        onChange={(e) => setGpuBackend(e.target.value)}
+                        className="w-full bg-slate-600 text-white rounded px-2 py-1"
+                    >
+                        <option value="auto">Auto‑Detect</option>
+                        <option value="cuda" disabled={isUnified}>CUDA (NVIDIA)</option>
+                        <option value="metal" disabled={!isUnified}>Metal (Apple)</option>
+                        <option value="vulkan">Vulkan (Cross‑Platform)</option>
+                        <option value="rocm" disabled={isUnified}>ROCm (AMD)</option>
+                        <option value="sycl">SYCL/oneAPI (Intel)</option>
+                    </select>
                 </div>
             )}
         </div>

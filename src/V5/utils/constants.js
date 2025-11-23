@@ -41,4 +41,14 @@ export const defaultModel = {
     cpuLayers: 0,
     useSystemRAM: false,
     mode: 'hybrid',
+    flashAttention: false,
+    // LM Studio specific settings
+    useKVF16: true,           // KV cache in FP16 (reduces memory)
+    useMmap: true,            // Memory-mapped file access
+    useMlock: false,          // Prevent swapping to disk
+    ropeFrequencyBase: 10000, // RoPE scaling base
+    ropeFrequencyScale: 1.0,  // RoPE scaling factor
+    numThreads: 0,            // 0 = auto-detect
+    // llama.cpp GPU backend
+    gpuBackend: 'auto',       // auto, cuda, metal, vulkan, rocm, sycl
 };

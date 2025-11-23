@@ -1,17 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Plus, Server, Trash2 } from 'lucide-react';
+import { Layers, Plus, Server, Trash2, Lock, Unlock } from 'lucide-react';
 import CommandExporter from './CommandExporter';
 import { colorMap, precisionBits } from '../utils/constants';
 import Tooltip from './Tooltip';
+import getBackendRecommendation from '../utils/backendHelper';
 
-const LabeledInput = ({ label, value, setter, type = 'range', min = 0, max = 100, step = 1, unit = '', color = 'slate', disabled = false, warning = null }) => {
+const LabeledInput = ({ label, value, setter, type = 'range', min = 0, max = 100, step = 1, unit = '', color = 'slate', borderColor = null, disabled = false, warning = null }) => {
     const [localValue, setLocalValue] = useState(String(value));
     useEffect(() => { setLocalValue(String(value)); }, [value]);
     const handleChange = (e) => setLocalValue(e.target.value);
     const commit = () => setter(Math.min(Math.max(Number(localValue), min), max));
 
+    // Define background colors based on category
+    const bgColorMap = {
+        blue: 'bg-blue-900/20',
+        purple: 'bg-purple-900/20',
+        cyan: 'bg-cyan-900/25',
+        emerald: 'bg-emerald-900/20',
+        indigo: 'bg-indigo-900/20',
+        orange: 'bg-orange-900/20',
+        slate: 'bg-slate-700'
+    };
+    const bgColor = bgColorMap[color] || 'bg-slate-700';
+    const finalBorderColor = borderColor ? colorMap[borderColor] : (colorMap[color] || 'transparent');
+
     return (
-        <div className={`mb-2 p-2 rounded-lg shadow-inner transition-colors duration-200 ${disabled ? 'bg-slate-800 opacity-50' : 'bg-slate-700'}`}>
+        <div className={`mb-2 p-2 rounded-lg shadow-inner transition-colors duration-200 border-l-2 ${disabled ? 'bg-slate-800 opacity-50' : bgColor}`} style={{ borderColor: finalBorderColor }}>
             <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-medium text-slate-200">{label}</label>
                 {warning && <span className="text-[10px] text-red-400">{warning}</span>}
@@ -58,7 +72,21 @@ const SelectInput = ({ label, value, setter, options, disabled = false, color = 
 );
 
 const ModelList = ({ models, updateModel, addModel, removeModel, applyPreset, isUnified, hardware }) => {
+    // Constraints toggle state per model
+    const [constraintsEnabled, setConstraintsEnabled] = React.useState({});
+
+    const toggleConstraints = (modelId) => {
+        setConstraintsEnabled(prev => ({
+            ...prev,
+            [modelId]: !prev[modelId]
+        }));
+    };
+
     const handleWeightSizeChange = (model, gb) => {
+        if (!constraintsEnabled[model.id]) {
+            // Just update weights size without syncing params
+            return;
+        }
         const bits = precisionBits[model.precision] || 4;
         const bytesPerParam = bits / 8;
         const params = (gb * Math.pow(1024, 3)) / (bytesPerParam * 1e9);
@@ -66,6 +94,10 @@ const ModelList = ({ models, updateModel, addModel, removeModel, applyPreset, is
     };
 
     const handleKVSizeChange = (model, gb) => {
+        if (!constraintsEnabled[model.id]) {
+            // Just update KV size without syncing context
+            return;
+        }
         const kvBytes = (precisionBits[model.kvCachePrecision] || 16) / 8;
         const batch = model.batchSize || 1;
         const hidden = model.hiddenSize || 4096;
@@ -136,6 +168,31 @@ const ModelList = ({ models, updateModel, addModel, removeModel, applyPreset, is
                                     );
                                 })}
                             </div>
+                            <div className="flex items-center gap-2 bg-slate-900/50 rounded border border-slate-600/50 px-2 py-1">
+                                <span className="text-[9px] font-medium text-slate-400">Overload:</span>
+                                <div className="flex bg-slate-700 rounded p-0.5">
+                                    <button
+                                        onClick={() => toggleConstraints(model.id)}
+                                        className={`px-2 py-0.5 text-[9px] font-bold rounded transition-colors ${constraintsEnabled[model.id]
+                                            ? 'bg-emerald-600 text-white'
+                                            : 'text-slate-400'
+                                            }`}
+                                        title="Allow memory/VRAM overload"
+                                    >
+                                        YES
+                                    </button>
+                                    <button
+                                        onClick={() => toggleConstraints(model.id)}
+                                        className={`px-2 py-0.5 text-[9px] font-bold rounded transition-colors ${!constraintsEnabled[model.id]
+                                            ? 'bg-red-600 text-white'
+                                            : 'text-slate-400'
+                                            }`}
+                                        title="Prevent memory/VRAM overload (safer)"
+                                    >
+                                        NO
+                                    </button>
+                                </div>
+                            </div>
                             <div className="flex gap-1">
                                 <button onClick={() => applyPreset(model.id, 'speed')} className="px-2 py-0.5 bg-slate-700/50 hover:bg-indigo-600/80 rounded text-[10px] text-indigo-300 hover:text-white transition-colors border border-indigo-500/30" title="Max Speed (GPU, INT4)">Speed</button>
                                 <button onClick={() => applyPreset(model.id, 'balance')} className="px-2 py-0.5 bg-slate-700/50 hover:bg-green-600/80 rounded text-[10px] text-green-300 hover:text-white transition-colors border border-green-500/30" title="Balanced (Hybrid, INT8)">Bal</button>
@@ -151,7 +208,7 @@ const ModelList = ({ models, updateModel, addModel, removeModel, applyPreset, is
 
                     <CommandExporter model={model} hardware={hardware} isUnified={isUnified} />
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
                         <div>
                             <LabeledInput
                                 label={<span className="flex items-center">Params (B)<Tooltip text="Model size in billions of parameters. Larger models need more VRAM but generally perform better." /></span>}
@@ -210,8 +267,50 @@ const ModelList = ({ models, updateModel, addModel, removeModel, applyPreset, is
                                 options={['fp16', 'int8'].map(k => ({ value: k, label: k }))}
                                 color="purple"
                             />
+                            <LabeledInput
+                                label={<span className="flex items-center">Batch Size<Tooltip text="Number of sequences processed in parallel. Larger batches use more VRAM but increase throughput." /></span>}
+                                value={model.batchSize}
+                                setter={v => updateModel(model.id, 'batchSize', v)}
+                                min={1}
+                                max={512}
+                                step={1}
+                                color="purple"
+                                borderColor="orange"
+                            />
                         </div>
                         <div>
+                            <div className="mb-2 p-2 rounded-lg shadow-inner bg-indigo-900/20 border-l-2" style={{ borderColor: colorMap.indigo }}>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-xs font-medium text-slate-200 flex items-center">
+                                        Flash Attention<Tooltip text="Optimized attention implementation. Reduces VRAM usage and increases speed. Only supported by LM Studio and llama.cpp (with FA build)." />
+                                    </label>
+                                </div>
+                                <div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded">
+                                    <button
+                                        onClick={() => updateModel(model.id, 'flashAttention', false)}
+                                        disabled={hardware.inferenceSoftware === 'ollama'}
+                                        className={`flex-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${!model.flashAttention
+                                            ? 'bg-slate-600 text-white'
+                                            : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                                            } ${hardware.inferenceSoftware === 'ollama' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        OFF
+                                    </button>
+                                    <button
+                                        onClick={() => updateModel(model.id, 'flashAttention', true)}
+                                        disabled={hardware.inferenceSoftware === 'ollama'}
+                                        className={`flex-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.flashAttention
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                                            } ${hardware.inferenceSoftware === 'ollama' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        ON
+                                    </button>
+                                </div>
+                                {hardware.inferenceSoftware === 'ollama' && (
+                                    <p className="text-[9px] text-yellow-400 mt-1">Not supported by Ollama</p>
+                                )}
+                            </div>
                             <LabeledInput
                                 label={<span className="flex items-center">Total Layers<Tooltip text="Number of transformer layers in the model. More layers = better quality but more VRAM needed." /></span>}
                                 value={model.numLayers}
@@ -219,7 +318,8 @@ const ModelList = ({ models, updateModel, addModel, removeModel, applyPreset, is
                                 min={1}
                                 max={200}
                                 step={1}
-                                color="slate"
+                                color="cyan"
+                                borderColor="emerald"
                             />
                             {!isUnified && (hardware.gpuEnabled !== false) && (
                                 <>
@@ -231,6 +331,7 @@ const ModelList = ({ models, updateModel, addModel, removeModel, applyPreset, is
                                         max={model.numLayers}
                                         disabled={model.mode !== 'hybrid'}
                                         color="indigo"
+                                        borderColor="emerald"
                                     />
                                     <div className="text-center text-[10px] font-mono text-slate-400 mt-1 bg-slate-900/50 p-1 rounded border border-slate-700/50">
                                         CPU Layers: <span className="text-emerald-400 font-bold">{Math.max(0, model.numLayers - model.gpuLayers)}</span>
@@ -244,6 +345,197 @@ const ModelList = ({ models, updateModel, addModel, removeModel, applyPreset, is
                             )}
                         </div>
                     </div>
+
+                    {/* LM Studio Advanced Settings */}
+                    {hardware.inferenceSoftware === 'lmstudio' && (
+                        <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                            <h4 className="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                                <span className="text-blue-400">⚙️</span> LM Studio Advanced Settings
+                            </h4>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {/* Memory Optimization Toggles */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-slate-300 block mb-2">Memory Optimization</label>
+
+                                    <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-emerald-500/30">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-slate-200">KV Cache FP16</span>
+                                            <Tooltip text="Store KV cache in 16-bit precision. Reduces memory usage by ~50% with minimal quality impact." />
+                                        </div>
+                                        <button
+                                            onClick={() => updateModel(model.id, 'useKVF16', !model.useKVF16)}
+                                            className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.useKVF16
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-slate-600 text-slate-300'
+                                                }`}
+                                        >
+                                            {model.useKVF16 ? 'ON' : 'OFF'}
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-indigo-500/30">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-slate-200">Use Mmap</span>
+                                            <Tooltip text="Memory-mapped file access. Improves load times by mapping model directly from disk." />
+                                        </div>
+                                        <button
+                                            onClick={() => updateModel(model.id, 'useMmap', !model.useMmap)}
+                                            className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.useMmap
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'bg-slate-600 text-slate-300'
+                                                }`}
+                                        >
+                                            {model.useMmap ? 'ON' : 'OFF'}
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-orange-500/30">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-slate-200">Use Mlock</span>
+                                            <Tooltip text="Prevent model from being swapped to disk. Reserves RAM but improves performance." />
+                                        </div>
+                                        <button
+                                            onClick={() => updateModel(model.id, 'useMlock', !model.useMlock)}
+                                            className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.useMlock
+                                                ? 'bg-orange-600 text-white'
+                                                : 'bg-slate-600 text-slate-300'
+                                                }`}
+                                        >
+                                            {model.useMlock ? 'ON' : 'OFF'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* RoPE Scaling */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-300 block mb-2">RoPE Scaling</label>
+                                    <LabeledInput
+                                        label={<span className="flex items-center">Frequency Base<Tooltip text="RoPE frequency base. Default 10000. Higher values allow better context extension." /></span>}
+                                        value={model.ropeFrequencyBase}
+                                        setter={v => updateModel(model.id, 'ropeFrequencyBase', v)}
+                                        min={1000}
+                                        max={1000000}
+                                        step={1000}
+                                        color="purple"
+                                        borderColor="cyan"
+                                    />
+                                    <LabeledInput
+                                        label={<span className="flex items-center">Frequency Scale<Tooltip text="RoPE frequency scale. 1.0 = default. Lower values extend context but may reduce quality." /></span>}
+                                        value={model.ropeFrequencyScale}
+                                        setter={v => updateModel(model.id, 'ropeFrequencyScale', v)}
+                                        min={0.1}
+                                        max={2.0}
+                                        step={0.1}
+                                        color="purple"
+                                        borderColor="cyan"
+                                    />
+                                </div>
+
+                                {/* Thread Control */}
+                                <div>
+                                    <label className="text-xs font-medium text-slate-300 block mb-2">Performance</label>
+                                    <LabeledInput
+                                        label={<span className="flex items-center">CPU Threads<Tooltip text="Number of CPU threads for inference. 0 = auto-detect." /></span>}
+                                        value={model.numThreads}
+                                        setter={v => updateModel(model.id, 'numThreads', v)}
+                                        min={0}
+                                        max={128}
+                                        step={1}
+                                        color="cyan"
+                                        borderColor="emerald"
+                                    />
+                                    <div className="mt-2 p-2 bg-slate-900/50 rounded border border-slate-700/50">
+                                        <p className="text-[10px] text-slate-400 leading-relaxed">
+                                            <strong className="text-yellow-400">Note:</strong> LM Studio specific settings. Optimal values depend on your hardware.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* llama.cpp GPU Backend Selection */}
+                    {
+                        hardware.inferenceSoftware === 'llama.cpp' && (hardware.gpuEnabled !== false || hardware.operatingSystem === 'macos') && (
+                            <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                                <h4 className="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                                    <span className="text-purple-400">🚀</span> llama.cpp GPU Backend
+                                </h4>
+
+                                {/* Intel Mac Warning */}
+                                {hardware.operatingSystem === 'macos' && hardware.chipType === 'intel' && (
+                                    <div className="mb-3 p-2 bg-yellow-900/30 border border-yellow-700/50 rounded text-xs text-yellow-300 flex items-start gap-2">
+                                        <span className="text-yellow-400">⚠️</span>
+                                        <div>
+                                            <strong>Intel Mac Detected:</strong> Metal is NOT recommended for Intel Macs.
+                                            <ul className="mt-1 ml-4 list-disc text-[10px]">
+                                                <li>AMD eGPU: Use <strong className="text-white">Vulkan</strong></li>
+                                                <li>Intel GPU: Use <strong className="text-white">SYCL</strong> (requires oneAPI)</li>
+                                                <li>CPU-only: Set GPU layers to 0</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {/* Backend Selection */}
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-300 block mb-2">GPU Backend</label>
+                                        <select
+                                            value={model.gpuBackend}
+                                            onChange={(e) => updateModel(model.id, 'gpuBackend', e.target.value)}
+                                            className="w-full bg-slate-600 text-white text-xs rounded px-2 py-1.5 border border-slate-500 focus:outline-none focus:border-purple-500"
+                                        >
+                                            <option value="auto">Auto-Detect</option>
+                                            <option value="cuda" disabled={hardware.operatingSystem === 'macos'}>CUDA (NVIDIA)</option>
+                                            <option value="metal">Metal (Apple Silicon)</option>
+                                            <option value="vulkan">Vulkan (Cross-Platform)</option>
+                                            <option value="rocm" disabled={hardware.operatingSystem === 'macos' || hardware.operatingSystem === 'windows'}>ROCm (AMD Linux)</option>
+                                            <option value="sycl">SYCL/oneAPI (Intel)</option>
+                                        </select>
+                                        <div className="mt-2 p-2 bg-slate-900/50 rounded border border-slate-700/50">
+                                            <p className="text-[10px] text-slate-400 leading-relaxed">
+                                                {getBackendRecommendation(hardware, model.gpuBackend)}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Backend Info */}
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-300 block mb-2">Backend Compatibility</label>
+                                        <div className="space-y-1 text-[10px]">
+                                            <div className="flex items-center justify-between p-1.5 bg-slate-700/50 rounded">
+                                                <span className="text-slate-300">CUDA (NVIDIA):</span>
+                                                <span className={hardware.operatingSystem !== 'macos' ? 'text-green-400' : 'text-red-400'}>
+                                                    {hardware.operatingSystem !== 'macos' ? '✓ Available' : '✗ macOS'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between p-1.5 bg-slate-700/50 rounded">
+                                                <span className="text-slate-300">Metal (Apple):</span>
+                                                <span className={hardware.operatingSystem === 'macos' && hardware.chipType === 'appleSilicon' ? 'text-green-400' : 'text-yellow-400'}>
+                                                    {hardware.operatingSystem === 'macos' && hardware.chipType === 'appleSilicon' ? '✓ Optimal' : hardware.operatingSystem === 'macos' ? '⚠ Poor Intel Mac' : '✗ Non-macOS'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between p-1.5 bg-slate-700/50 rounded">
+                                                <span className="text-slate-300">Vulkan:</span>
+                                                <span className="text-green-400">✓ Universal</span>
+                                            </div>
+                                            <div className="flex items-center justify-between p-1.5 bg-slate-700/50 rounded">
+                                                <span className="text-slate-300">ROCm (AMD):</span>
+                                                <span className={hardware.operatingSystem === 'linux' ? 'text-green-400' : 'text-yellow-400'}>
+                                                    {hardware.operatingSystem === 'linux' ? '✓ Linux Only' : '⚠ Linux Best'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between p-1.5 bg-slate-700/50 rounded">
+                                                <span className="text-slate-300">SYCL (Intel):</span>
+                                                <span className="text-yellow-400">⚠ Req. oneAPI</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
                 </div>
             ))}
         </div>
