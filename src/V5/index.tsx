@@ -121,26 +121,23 @@ const VRAMVisualizerV5: React.FC = () => {
         setGpuList(newGpuList);
 
         // VALIDATION: Log warnings for incomplete hardware specs (Phase 8A Task D-02)
+        // Note: Calculator now automatically uses systemRamSize, ramType, ramSpeed from context
         if (selectedHardwareId && selectedHardwareId !== 'custom_quick') {
             const spec = custom || getHardwareById(selectedHardwareId);
             if (spec) {
-                const missing: string[] = [];
-                if (!name) missing.push('name');
-                if (vram === 0 && !isUnified) missing.push('vram_gb');
-                if (brand === 'nvidia' && !spec.brand) missing.push('brand');
-
-                if (missing.length > 0) {
-                    console.error(`[Calculator] Incomplete hardware spec for preset "${selectedHardwareId}":`, {
-                        missingFields: missing,
-                        presetId: selectedHardwareId,
-                        presetName: spec.name || 'Unknown',
-                        recommendation: 'Update HARDWARE_DATABASE with complete fields'
-                    });
+                // Validate complete specs
+                if (!spec.name || spec.name.trim() === '') {
+                    console.error(`⚠️ Hardware preset "${selectedHardwareId}" missing name field. Update HARDWARE_DATABASE.`);
+                }
+                if (!isUnified && (!spec.vram_gb || spec.vram_gb === 0)) {
+                    console.error(`⚠️ Discrete GPU "${selectedHardwareId}" missing vram_gb field. Update HARDWARE_DATABASE.`);
+                }
+                if (!spec.brand) {
+                    console.error(`⚠️ Hardware preset "${selectedHardwareId}" missing brand field. Recommendation: Add explicit brand.`);
                 }
             }
         }
-
-    }, [selectedHardwareId, gpuCount, operatingSystem, customHardware]);
+    }, [selectedHardwareId, gpuCount, customHardware, operatingSystem, systemRamSize, ramType, ramSpeed]);
 
 
     // Derived values
