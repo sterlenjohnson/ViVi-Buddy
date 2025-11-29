@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Copy, Terminal, AlertTriangle } from 'lucide-react';
 
 import { Model, Hardware } from '../types';
+import { useHardware } from '../../contexts/HardwareContext';
 
 interface CommandExporterProps {
     model: Model;
@@ -10,7 +11,10 @@ interface CommandExporterProps {
 }
 
 const CommandExporter: React.FC<CommandExporterProps> = ({ model, hardware, isUnified }) => {
-    const inferenceSoftware = hardware.inferenceSoftware || 'llama.cpp';
+    const { selectedRuntime } = useHardware();
+    // Map selectedRuntime to internal inferenceSoftware format if needed, or use directly
+    // selectedRuntime values: 'llamacpp', 'ollama', 'lmstudio'
+    const inferenceSoftware = selectedRuntime || 'llamacpp';
 
     const [modelPath, setModelPath] = useState(() => {
         if (inferenceSoftware === 'ollama') {
@@ -55,14 +59,14 @@ const CommandExporter: React.FC<CommandExporterProps> = ({ model, hardware, isUn
 
             // Multi-GPU env vars
             if (gpuList && gpuList.length > 1 && !isUnified) {
-                const brands = [...new Set(gpuList.map(g => g.brand || 'nvidia'))];
+                const brands = [...new Set(gpuList.map((g: any) => g.brand || 'nvidia'))];
                 const primaryBrand = brands[0];
 
                 if (primaryBrand === 'nvidia') {
-                    const gpuIndices = gpuList.map((_, i) => i).join(',');
+                    const gpuIndices = gpuList.map((_: any, i: number) => i).join(',');
                     cmd = `CUDA_VISIBLE_DEVICES=${gpuIndices} ` + cmd;
                 } else if (primaryBrand === 'amd') {
-                    const gpuIndices = gpuList.map((_, i) => i).join(',');
+                    const gpuIndices = gpuList.map((_: any, i: number) => i).join(',');
                     cmd = `ROCR_VISIBLE_DEVICES=${gpuIndices} ` + cmd;
                 }
             }
@@ -78,7 +82,7 @@ const CommandExporter: React.FC<CommandExporterProps> = ({ model, hardware, isUn
 
             let notes = [];
             if (flashAttention) {
-                notes.push('Flash Attention: Enable in LM Studio GUI (Advanced \u003e Model Init)');
+                notes.push('Flash Attention: Enable in LM Studio GUI (Advanced > Model Init)');
             }
 
             if (notes.length > 0) {
@@ -94,7 +98,7 @@ const CommandExporter: React.FC<CommandExporterProps> = ({ model, hardware, isUn
 
         // Multi-GPU tensor split
         if (gpuList && gpuList.length > 1 && !isUnified && layers > 0) {
-            const vramValues = gpuList.map(g => g.vram);
+            const vramValues = gpuList.map((g: any) => g.vram);
             const tensorSplit = vramValues.join(',');
             cmd += ` --tensor-split ${tensorSplit}`;
         }

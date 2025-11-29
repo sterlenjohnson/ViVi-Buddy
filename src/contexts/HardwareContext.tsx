@@ -39,6 +39,10 @@ interface HardwareContextType {
     deleteCustomHardware: (id: string) => void;
     benchmarkMode: 'gpu' | 'offloading' | 'cpu';
     setBenchmarkMode: (mode: 'gpu' | 'offloading' | 'cpu') => void;
+
+    // Software Config (Phase 8D)
+    selectedRuntime: string;
+    setSelectedRuntime: (runtime: string) => void;
 }
 
 const HardwareContext = createContext<HardwareContextType | undefined>(undefined);
@@ -77,6 +81,9 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
     // Mode
     const [benchmarkMode, setBenchmarkMode] = useState<'gpu' | 'offloading' | 'cpu'>('gpu');
 
+    // Software Config (Phase 8D)
+    const [selectedRuntime, setSelectedRuntime] = useState<string>('llama.cpp');
+
     // Load from localStorage on mount
     useEffect(() => {
         try {
@@ -97,6 +104,7 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
                 setSelectedRamId(data.selectedRamId || 'ddr5_6000_dual');
                 setCustomHardware(data.customHardware || []);
                 setBenchmarkMode(data.benchmarkMode || 'gpu');
+                setSelectedRuntime(data.selectedRuntime || 'llama.cpp');
             }
         } catch (error) {
             console.error('Failed to load hardware context:', error);
@@ -119,6 +127,7 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
                 selectedRamId,
                 customHardware,
                 benchmarkMode,
+                selectedRuntime,
             };
             localStorage.setItem('vivi_hardware_context', JSON.stringify(data));
         } catch (error) {
@@ -127,7 +136,7 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
     }, [
         selectedHardwareId, selectedCpuId, gpuCount, isNvlink,
         operatingSystem, systemRamSize, ramType, ramSpeed, storageType,
-        selectedRamId, customHardware, benchmarkMode
+        selectedRamId, customHardware, benchmarkMode, selectedRuntime
     ]);
 
     const addCustomHardware = (hardware: HardwareItem) => {
@@ -319,6 +328,8 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
         deleteCustomHardware,
         benchmarkMode,
         setBenchmarkMode,
+        selectedRuntime,
+        setSelectedRuntime,
     };
 
     return (

@@ -229,6 +229,8 @@ const HardwareConfigPage: React.FC = () => {
         addCustomHardware,
         updateCustomHardware,
         deleteCustomHardware,
+        selectedRuntime,
+        setSelectedRuntime
     } = useHardware();
 
     const [detectedHardware, setDetectedHardware] = useState<any>(null);
@@ -288,8 +290,8 @@ const HardwareConfigPage: React.FC = () => {
     const [isQuickCustom, setIsQuickCustom] = useState(false);
     const [showDetailedForm, setShowDetailedForm] = useState(false);
 
-    // Software Runtime Selection
-    const [selectedRuntime, setSelectedRuntime] = useState<string>('llamacpp');
+    // Software Runtime Selection (Managed by Global Context)
+    // const [selectedRuntime, setSelectedRuntime] = useState<string>('llamacpp');
 
     const [customSpec, setCustomSpec] = useState({
         vram: 24,
@@ -557,10 +559,10 @@ const HardwareConfigPage: React.FC = () => {
                                     setOperatingSystem('windows');
                                     if (benchmarkMode === 'cpu') setBenchmarkMode('gpu');
                                 }}
-                                className={`p - 4 rounded - lg border - 2 flex flex - col items - center gap - 2 transition - all ${operatingSystem === 'windows'
+                                className={`p-4 rounded-lg border-2 flex flex-col items-center gap-2 transition-all ${operatingSystem === 'windows'
                                     ? 'border-teal-500 bg-teal-900/30'
                                     : 'border-gray-600 bg-gray-900/50 hover:border-gray-500'
-                                    } `}
+                                    }`}
                             >
                                 <Laptop className="w-8 h-8 text-blue-400" />
                                 <span className="font-medium">Windows</span>
@@ -570,10 +572,10 @@ const HardwareConfigPage: React.FC = () => {
                                     setOperatingSystem('linux');
                                     if (benchmarkMode === 'cpu') setBenchmarkMode('gpu');
                                 }}
-                                className={`p - 4 rounded - lg border - 2 flex flex - col items - center gap - 2 transition - all ${operatingSystem === 'linux'
+                                className={`p-4 rounded-lg border-2 flex flex-col items-center gap-2 transition-all ${operatingSystem === 'linux'
                                     ? 'border-teal-500 bg-teal-900/30'
                                     : 'border-gray-600 bg-gray-900/50 hover:border-gray-500'
-                                    } `}
+                                    }`}
                             >
                                 <Server className="w-8 h-8 text-orange-400" />
                                 <span className="font-medium">Linux</span>
@@ -584,10 +586,10 @@ const HardwareConfigPage: React.FC = () => {
                                     setBenchmarkMode('gpu'); // Mac is always unified/GPU-like
                                     setMacChipType(null); // Reset to show chip selector
                                 }}
-                                className={`p - 4 rounded - lg border - 2 flex flex - col items - center gap - 2 transition - all ${operatingSystem === 'macos'
+                                className={`p-4 rounded-lg border-2 flex flex-col items-center gap-2 transition-all ${operatingSystem === 'macos'
                                     ? 'border-teal-500 bg-teal-900/30'
                                     : 'border-gray-600 bg-gray-900/50 hover:border-gray-500'
-                                    } `}
+                                    }`}
                             >
                                 <CommandIcon className="w-8 h-8 text-gray-300" />
                                 <span className="font-medium">macOS</span>
@@ -750,17 +752,17 @@ const HardwareConfigPage: React.FC = () => {
                             />
                         </div>
 
-                        <div className={`grid grid - cols - 1 md: grid - cols - 2 gap - 3 max - h - 96 overflow - y - auto pr - 2 custom - scrollbar ${isQuickCustom ? 'opacity-50 pointer-events-none' : ''} `}>
+                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar ${isQuickCustom ? 'opacity-50 pointer-events-none' : ''}`}>
                             {filteredHardware.map((hw) => {
                                 const isCustomPreset = 'isCustom' in hw && hw.isCustom === true;
                                 return (
                                     <div key={hw.id} className="relative group">
                                         <button
                                             onClick={() => setSelectedHardwareId(hw.id)}
-                                            className={`w - full text - left p - 3 rounded - lg border - 2 transition - all ${selectedHardwareId === hw.id
+                                            className={`w-full text-left p-3 rounded-lg border-2 transition-all ${selectedHardwareId === hw.id
                                                 ? 'border-teal-500 bg-teal-900/30'
                                                 : 'border-gray-600 bg-gray-900/50 hover:border-gray-500'
-                                                } `}
+                                                }`}
                                         >
                                             <div className="flex justify-between items-start">
                                                 <div className="flex-1">
@@ -1176,6 +1178,16 @@ const HardwareConfigPage: React.FC = () => {
                                         </div>
                                     </>
                                 )}
+
+                                {/* Software Runtime Selection (Phase 8D) */}
+                                <hr className="border-gray-700" />
+                                <SoftwareRuntimeSelector
+                                    selectedRuntime={selectedRuntime}
+                                    onRuntimeChange={setSelectedRuntime}
+                                    isIntelMac={isIntelMac}
+                                    isAppleSilicon={isAppleSilicon}
+                                    runtimeSupport={selectedHwDetails?.supportedRuntimes}
+                                />
                             </div>
                         ) : (
                             <div className="text-center text-gray-500 py-8">
