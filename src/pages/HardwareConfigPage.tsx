@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useHardware, type OperatingSystem, type RamType, type StorageType } from '../contexts/HardwareContext';
 import { autoDetectHardware, getDetectionConfidence } from '../V5/utils/hardwareDetection';
-import { type HardwareItem } from '../database/db_interface';
 import { Cpu, Zap, HardDrive, Gauge, Monitor, Sparkles, Search, Server, Laptop, Settings, Lock, Sliders, X } from 'lucide-react';
-import cpuDatabase from '../database/cpu_db.json';
+import { HARDWARE_DATABASE, type HardwareItem, type HardwareOption } from '../database/db_interface';
+import CPU_DATABASE from '../database/cpu_db.json';
 import CustomHardwareForm from '../components/CustomHardwareForm';
 import { SoftwareRuntimeSelector } from '../components/SoftwareRuntimeSelector';
 
@@ -137,7 +137,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'PCIe',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'xeon_w_3275m', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 1536
+        enforcedCpu: 'xeon_w_3275m', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 1536, ram_speed: 2933
     },
     {
         id: 'mac_pro_2019_vega_ii', name: 'Mac Pro 2019 (Xeon W 12-core + Vega II)', category: 'IntelMac', generation: 'Intel Mac',
@@ -147,7 +147,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'PCIe',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'xeon_w_3235', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 768
+        enforcedCpu: 'xeon_w_3235', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 768, ram_speed: 2933
     },
     {
         id: 'imac_27_2020_5700xt', name: 'iMac 27" 2020 (i9-10910 + 5700 XT)', category: 'IntelMac', generation: 'Intel Mac',
@@ -157,7 +157,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'Soldered',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'i9_10910', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 128
+        enforcedCpu: 'i9_10910', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 128, ram_speed: 2666
     },
     {
         id: 'mbp_16_2019_5500m', name: 'MacBook Pro 16" 2019 (i9-9980HK + 5500M)', category: 'IntelMac', generation: 'Intel Mac',
@@ -167,7 +167,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'Soldered',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'i9_9980hk', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64
+        enforcedCpu: 'i9_9980hk', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64, ram_speed: 2666
     },
     {
         id: 'mbp_16_2019_5300m', name: 'MacBook Pro 16" 2019 (i7-9750H + 5300M)', category: 'IntelMac', generation: 'Intel Mac',
@@ -177,7 +177,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'Soldered',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'i7_9750h', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64
+        enforcedCpu: 'i7_9750h', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64, ram_speed: 2666
     },
     {
         id: 'mbp_16_2019_5600m', name: 'MacBook Pro 16" 2019 (i9-9980HK + 5600M HBM2)', category: 'IntelMac', generation: 'Intel Mac',
@@ -187,7 +187,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'Soldered',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'i9_9980hk', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64
+        enforcedCpu: 'i9_9980hk', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64, ram_speed: 2666
     },
 
     // CPUs
@@ -240,12 +240,6 @@ const HardwareConfigPage: React.FC = () => {
     const [selectedBrand, setSelectedBrand] = useState<string>('NVIDIA');
     const [searchQuery, setSearchQuery] = useState('');
     const [macChipType, setMacChipType] = useState<'silicon' | 'intel' | null>(null);
-    const [cpuList, setCpuList] = useState<any[]>([]);
-
-    // Load CPU database
-    useEffect(() => {
-        setCpuList(cpuDatabase as any[]);
-    }, []);
 
     // Merge custom hardware with database
     const allHardware = [...HARDWARE_DATABASE, ...customHardware];
@@ -271,6 +265,10 @@ const HardwareConfigPage: React.FC = () => {
             // Enforce CPU
             if (selectedHwDetails.enforcedCpu && selectedCpuId !== selectedHwDetails.enforcedCpu) {
                 setSelectedCpuId(selectedHwDetails.enforcedCpu);
+            }
+            // Enforce RAM Speed (Fix for Intel Macs defaulting to 6000)
+            if (selectedHwDetails.ram_speed && ramSpeed !== selectedHwDetails.ram_speed) {
+                setRamSpeed(selectedHwDetails.ram_speed);
             }
         }
     }, [selectedHardwareId, selectedHwDetails, systemRamSize, storageType, ramType, selectedCpuId, setSystemRamSize, setStorageType, setRamType, setSelectedCpuId]);
@@ -423,7 +421,7 @@ const HardwareConfigPage: React.FC = () => {
     };
 
     // Type guard
-    const isHardwareOption = (hw: AnyHardware): hw is HardwareOption => {
+    const isHardwareOption = (hw: HardwareItem | HardwareOption): hw is HardwareOption => {
         return 'category' in hw;
     };
 
@@ -645,22 +643,22 @@ const HardwareConfigPage: React.FC = () => {
                             <div className="flex bg-gray-700 rounded p-1">
                                 <button
                                     onClick={() => setBenchmarkMode('gpu')}
-                                    className={`flex - 1 py - 3 px - 4 rounded font - medium transition - colors ${benchmarkMode === 'gpu' ? 'bg-teal-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
-                                        } `}
+                                    className={`flex-1 py-3 px-4 rounded font-medium transition-colors ${benchmarkMode === 'gpu' ? 'bg-teal-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
+                                        }`}
                                 >
                                     GPU Only
                                 </button>
                                 <button
                                     onClick={() => setBenchmarkMode('offloading')}
-                                    className={`flex - 1 py - 3 px - 4 rounded font - medium transition - colors ${benchmarkMode === 'offloading' ? 'bg-teal-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
-                                        } `}
+                                    className={`flex-1 py-3 px-4 rounded font-medium transition-colors ${benchmarkMode === 'offloading' ? 'bg-teal-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
+                                        }`}
                                 >
                                     GPU + CPU (Offloading)
                                 </button>
                                 <button
                                     onClick={() => setBenchmarkMode('cpu')}
-                                    className={`flex - 1 py - 3 px - 4 rounded font - medium transition - colors ${benchmarkMode === 'cpu' ? 'bg-teal-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
-                                        } `}
+                                    className={`flex-1 py-3 px-4 rounded font-medium transition-colors ${benchmarkMode === 'cpu' ? 'bg-teal-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
+                                        }`}
                                 >
                                     CPU Only
                                 </button>
@@ -680,10 +678,10 @@ const HardwareConfigPage: React.FC = () => {
                                     <button
                                         key={brand}
                                         onClick={() => setSelectedBrand(brand)}
-                                        className={`p - 3 rounded - lg border - 2 font - semibold transition - all ${selectedBrand === brand
+                                        className={`p-3 rounded-lg border-2 font-semibold transition-all ${selectedBrand === brand
                                             ? 'border-teal-500 bg-teal-900/30 text-white'
                                             : 'border-gray-600 bg-gray-900/50 text-gray-400 hover:border-gray-500'
-                                            } `}
+                                            }`}
                                     >
                                         {brand}
                                     </button>
