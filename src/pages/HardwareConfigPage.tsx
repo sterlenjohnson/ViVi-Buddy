@@ -970,8 +970,21 @@ const HardwareConfigPage: React.FC = () => {
                                                     type="number"
                                                     min="1"
                                                     max="8"
-                                                    value={gpuCount}
-                                                    onChange={(e) => setGpuCount(Number(e.target.value))}
+                                                    value={gpuCount || ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val === '') {
+                                                            setGpuCount(0); // Temporarily allow 0 to represent empty
+                                                        } else {
+                                                            setGpuCount(Number(val));
+                                                        }
+                                                    }}
+                                                    onBlur={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val === '' || Number(val) < 1) {
+                                                            setGpuCount(1); // Default to 1 if empty/invalid on blur
+                                                        }
+                                                    }}
                                                     className="w-full bg-gray-900 rounded p-2 text-white border border-gray-600 focus:border-teal-500 outline-none"
                                                     aria-label="Number of GPUs"
                                                 />
@@ -1035,8 +1048,21 @@ const HardwareConfigPage: React.FC = () => {
                                                 type="number"
                                                 min="1"
                                                 max={selectedHwDetails?.maxRam || 256}
-                                                value={systemRamSize}
-                                                onChange={(e) => setSystemRamSize(Number(e.target.value))}
+                                                value={systemRamSize || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === '') {
+                                                        setSystemRamSize(0); // Temporarily allow 0 to represent empty
+                                                    } else {
+                                                        setSystemRamSize(Number(val));
+                                                    }
+                                                }}
+                                                onBlur={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === '' || Number(val) < 1) {
+                                                        setSystemRamSize(1); // Default to 1 if empty/invalid on blur
+                                                    }
+                                                }}
                                                 className="w-full bg-gray-900 rounded p-2 text-white border border-gray-600 focus:border-teal-500 outline-none"
                                                 aria-label="System RAM size in GB"
                                             />

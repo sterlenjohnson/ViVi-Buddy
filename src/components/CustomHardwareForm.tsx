@@ -75,12 +75,27 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
         return [];
     };
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setForm(prev => ({
-            ...prev,
-            [name]: (name === 'name' || name === 'architecture' || name === 'storage_type' || name === 'storage_interface') ? value : Number(value)
-        }));
+        setForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Helper for number inputs: allow empty string (clearable)
+    const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        if (value === '') {
+            setForm(prev => ({ ...prev, [name]: 0 })); // Temporarily 0 for empty
+        } else {
+            setForm(prev => ({ ...prev, [name]: Number(value) }));
+        }
+    };
+
+    // Helper for number inputs on blur: default to 1 if empty/invalid
+    const handleNumberBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        if (value === '' || Number(value) < 1) {
+            setForm(prev => ({ ...prev, [name]: 1 }));
+        }
     };
 
     const handleSubmit = (e: FormEvent) => {
@@ -269,8 +284,9 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
                     <input
                         type="number"
                         name="price_usd"
-                        value={form.price_usd}
-                        onChange={handleChange}
+                        value={form.price_usd || ''}
+                        onChange={handleNumberChange}
+                        onBlur={handleNumberBlur}
                         className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm"
                     />
                 </div>
@@ -282,8 +298,9 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
                             <input
                                 type="number"
                                 name="vram_gb"
-                                value={form.vram_gb}
-                                onChange={handleChange}
+                                value={form.vram_gb || ''}
+                                onChange={handleNumberChange}
+                                onBlur={handleNumberBlur}
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm"
                                 required
                             />
@@ -293,8 +310,9 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
                             <input
                                 type="number"
                                 name="bandwidth_gbps"
-                                value={form.bandwidth_gbps}
-                                onChange={handleChange}
+                                value={form.bandwidth_gbps || ''}
+                                onChange={handleNumberChange}
+                                onBlur={handleNumberBlur}
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm"
                                 required
                             />
@@ -304,8 +322,9 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
                             <input
                                 type="number"
                                 name="cuda_cores"
-                                value={form.cuda_cores}
-                                onChange={handleChange}
+                                value={form.cuda_cores || ''}
+                                onChange={handleNumberChange}
+                                onBlur={handleNumberBlur}
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm"
                             />
                         </div>
@@ -314,8 +333,9 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
                             <input
                                 type="number"
                                 name="memory_bus_width_bits"
-                                value={form.memory_bus_width_bits}
-                                onChange={handleChange}
+                                value={form.memory_bus_width_bits || ''}
+                                onChange={handleNumberChange}
+                                onBlur={handleNumberBlur}
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm"
                             />
                         </div>
@@ -327,8 +347,9 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
                             <input
                                 type="number"
                                 name="cores"
-                                value={form.cores}
-                                onChange={handleChange}
+                                value={form.cores || ''}
+                                onChange={handleNumberChange}
+                                onBlur={handleNumberBlur}
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm"
                             />
                         </div>
@@ -337,8 +358,9 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
                             <input
                                 type="number"
                                 name="threads"
-                                value={form.threads}
-                                onChange={handleChange}
+                                value={form.threads || ''}
+                                onChange={handleNumberChange}
+                                onBlur={handleNumberBlur}
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm"
                             />
                         </div>
@@ -347,8 +369,9 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
                             <input
                                 type="number"
                                 name="boost_clock_mhz"
-                                value={form.boost_clock_mhz}
-                                onChange={handleChange}
+                                value={form.boost_clock_mhz || ''}
+                                onChange={handleNumberChange}
+                                onBlur={handleNumberBlur}
                                 className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm"
                             />
                         </div>
@@ -360,8 +383,9 @@ const CustomHardwareForm: React.FC<CustomHardwareFormProps> = ({ onAdd, onClose 
                     <input
                         type="number"
                         name="tdp_watts"
-                        value={form.tdp_watts}
-                        onChange={handleChange}
+                        value={form.tdp_watts || ''}
+                        onChange={handleNumberChange}
+                        onBlur={handleNumberBlur}
                         className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white text-sm"
                     />
                 </div>
