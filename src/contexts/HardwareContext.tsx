@@ -43,6 +43,8 @@ interface HardwareContextType {
     // Software Config (Phase 8D)
     selectedRuntime: string;
     setSelectedRuntime: (runtime: string) => void;
+    selectedBackend: string;
+    setSelectedBackend: (backend: string) => void;
 }
 
 const HardwareContext = createContext<HardwareContextType | undefined>(undefined);
@@ -83,6 +85,7 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
 
     // Software Config (Phase 8D)
     const [selectedRuntime, setSelectedRuntime] = useState<string>('llama.cpp');
+    const [selectedBackend, setSelectedBackend] = useState<string>('auto');
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -105,6 +108,7 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
                 setCustomHardware(data.customHardware || []);
                 setBenchmarkMode(data.benchmarkMode || 'gpu');
                 setSelectedRuntime(data.selectedRuntime || 'llama.cpp');
+                setSelectedBackend(data.selectedBackend || 'auto');
             }
         } catch (error) {
             console.error('Failed to load hardware context:', error);
@@ -128,6 +132,7 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
                 customHardware,
                 benchmarkMode,
                 selectedRuntime,
+                selectedBackend,
             };
             localStorage.setItem('vivi_hardware_context', JSON.stringify(data));
         } catch (error) {
@@ -136,7 +141,7 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
     }, [
         selectedHardwareId, selectedCpuId, gpuCount, isNvlink,
         operatingSystem, systemRamSize, ramType, ramSpeed, storageType,
-        selectedRamId, customHardware, benchmarkMode, selectedRuntime
+        selectedRamId, customHardware, benchmarkMode, selectedRuntime, selectedBackend
     ]);
 
     const addCustomHardware = (hardware: HardwareItem) => {
@@ -330,6 +335,8 @@ export const HardwareProvider: React.FC<HardwareProviderProps> = ({ children }) 
         setBenchmarkMode,
         selectedRuntime,
         setSelectedRuntime,
+        selectedBackend,
+        setSelectedBackend,
     };
 
     return (

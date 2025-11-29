@@ -99,8 +99,10 @@ const VRAMVisualizerV5: React.FC = () => {
 
         setGpuVendor(brand);
 
-        // FIXED: Properly detect chip type including unified memory systems
-        if (isUnified || operatingSystem === 'macos') {
+        // FIXED: Properly detect chip type.
+        // Only set 'appleSilicon' if it's actually unified memory (M-series)
+        // Intel Macs (macOS + Intel CPU) should be treated as 'gpu' (discrete) or 'cpu'
+        if (isUnified) {
             setChipType('appleSilicon');
         } else if (brand === 'cpu') {
             setChipType('cpu');
@@ -111,9 +113,17 @@ const VRAMVisualizerV5: React.FC = () => {
         // Construct GPU List with exact names
         const newGpuList: GpuItem[] = [];
         for (let i = 0; i < gpuCount; i++) {
+            // Clean up name display: avoid redundant "GPU #1: GPU #1"
+            // If name is present, use it directly. If not, fallback to generic.
+            // We append index only if there are multiple GPUs to distinguish them.
+            let displayName = name || `GPU`;
+            if (gpuCount > 1) {
+                displayName = `${displayName} #${i + 1}`;
+            }
+
             newGpuList.push({
                 id: i,
-                name: name ? `${name} #${i + 1}` : `GPU #${i + 1}`, // FIXED: Preserve name, fallback only if truly empty
+                name: displayName,
                 vram: vram,
                 brand: brand
             });

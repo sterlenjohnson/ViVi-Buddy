@@ -230,7 +230,9 @@ const HardwareConfigPage: React.FC = () => {
         updateCustomHardware,
         deleteCustomHardware,
         selectedRuntime,
-        setSelectedRuntime
+        setSelectedRuntime,
+        selectedBackend,
+        setSelectedBackend
     } = useHardware();
 
     const [detectedHardware, setDetectedHardware] = useState<any>(null);
@@ -294,6 +296,7 @@ const HardwareConfigPage: React.FC = () => {
     // const [selectedRuntime, setSelectedRuntime] = useState<string>('llamacpp');
 
     const [customSpec, setCustomSpec] = useState({
+        name: 'Custom Spec',
         vram: 24,
         bandwidth: 900,
         cpuCores: 16,
@@ -699,29 +702,43 @@ const HardwareConfigPage: React.FC = () => {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => {
-                                        setIsQuickCustom(!isQuickCustom);
-                                        if (!isQuickCustom) {
-                                            setSelectedHardwareId('custom_quick');
-                                            setBenchmarkMode('gpu'); // Reset to standard
-                                            setShowDetailedForm(false);
-                                        } else {
+                                        if (isQuickCustom) {
+                                            // Deactivate Quick Custom
+                                            setIsQuickCustom(false);
                                             setSelectedHardwareId('');
+                                        } else {
+                                            // Activate Quick Custom, Deactivate Detailed Form
+                                            setIsQuickCustom(true);
+                                            setShowDetailedForm(false);
+                                            setSelectedHardwareId('custom_quick');
+                                            setBenchmarkMode('gpu');
                                         }
                                     }}
-                                    className={`px - 4 py - 2 rounded - lg font - medium transition - all flex items - center gap - 2 text - sm ${isQuickCustom
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm ${isQuickCustom
                                         ? 'bg-purple-600 text-white shadow-lg ring-2 ring-purple-400'
                                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                        } `}
+                                        }`}
                                 >
                                     <Sliders className="w-4 h-4" />
                                     {isQuickCustom ? 'Quick Custom Active' : 'Quick Custom'}
                                 </button>
                                 <button
-                                    onClick={() => setShowDetailedForm(!showDetailedForm)}
-                                    className={`px - 4 py - 2 rounded - lg font - medium transition - all flex items - center gap - 2 text - sm ${showDetailedForm
+                                    onClick={() => {
+                                        if (showDetailedForm) {
+                                            setShowDetailedForm(false);
+                                        } else {
+                                            // Activate Detailed Form, Deactivate Quick Custom
+                                            setShowDetailedForm(true);
+                                            setIsQuickCustom(false);
+                                            if (selectedHardwareId === 'custom_quick') {
+                                                setSelectedHardwareId('');
+                                            }
+                                        }
+                                    }}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 text-sm ${showDetailedForm
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                        } `}
+                                        }`}
                                 >
                                     <Sparkles className="w-4 h-4" />
                                     {showDetailedForm ? 'Hide Form' : 'Add Item'}
@@ -820,6 +837,18 @@ const HardwareConfigPage: React.FC = () => {
                                 <div className="p-4 bg-purple-900/20 border border-purple-700/50 rounded-lg">
                                     <div className="text-xs text-purple-400 font-bold uppercase mb-4 flex items-center gap-2">
                                         <Sliders className="w-4 h-4" /> Quick Custom Configuration
+                                    </div>
+
+                                    {/* Custom Name Input */}
+                                    <div className="mb-6">
+                                        <label className="block text-sm text-gray-300 mb-2">Preset Name</label>
+                                        <input
+                                            type="text"
+                                            value={customSpec.name || 'Custom Spec'}
+                                            onChange={(e) => setCustomSpec({ ...customSpec, name: e.target.value })}
+                                            className="w-full bg-gray-900 text-white border border-purple-500/50 rounded-lg p-2 focus:border-purple-500 outline-none"
+                                            placeholder="e.g. RTX 4060 Ti Custom"
+                                        />
                                     </div>
 
                                     {/* Custom GPU Sliders */}
@@ -1184,6 +1213,16 @@ const HardwareConfigPage: React.FC = () => {
                                 <SoftwareRuntimeSelector
                                     selectedRuntime={selectedRuntime}
                                     onRuntimeChange={setSelectedRuntime}
+                                    selectedBackend={selectedBackend}
+                                    onBackendChange={setSelectedBackend}
+                                    gpuVendor={
+                                        selectedHwDetails?.category === 'NVIDIA' ? 'nvidia' :
+                                            selectedHwDetails?.category === 'AMD' ? 'amd' :
+                                                selectedHwDetails?.category === 'Intel' ? 'intel' :
+                                                    selectedHwDetails?.category === 'Apple' ? 'apple' :
+                                                        selectedHwDetails?.category === 'IntelMac' ? 'amd' : // Most Intel Macs have AMD GPUs
+                                                            selectedBrand.toLowerCase()
+                                    }
                                     isIntelMac={isIntelMac}
                                     isAppleSilicon={isAppleSilicon}
                                     runtimeSupport={selectedHwDetails?.supportedRuntimes}

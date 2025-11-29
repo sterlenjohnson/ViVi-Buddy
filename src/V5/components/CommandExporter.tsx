@@ -11,7 +11,7 @@ interface CommandExporterProps {
 }
 
 const CommandExporter: React.FC<CommandExporterProps> = ({ model, hardware, isUnified }) => {
-    const { selectedRuntime } = useHardware();
+    const { selectedRuntime, selectedBackend } = useHardware();
     // Map selectedRuntime to internal inferenceSoftware format if needed, or use directly
     // selectedRuntime values: 'llamacpp', 'ollama', 'lmstudio'
     const inferenceSoftware = selectedRuntime || 'llamacpp';
@@ -42,6 +42,17 @@ const CommandExporter: React.FC<CommandExporterProps> = ({ model, hardware, isUn
     }, [inferenceSoftware, model.name]);
 
     const generateCommand = () => {
+        let cmd = '';
+
+        // Backend specific comments
+        if (selectedBackend && selectedBackend !== 'auto') {
+            cmd += `# Backend: ${selectedBackend.toUpperCase()}\n`;
+            if (selectedBackend === 'cuda') cmd += `# Ensure build with GGML_CUDA=1\n`;
+            if (selectedBackend === 'rocm') cmd += `# Ensure build with GGML_HIPBLAS=1\n`;
+            if (selectedBackend === 'vulkan') cmd += `# Ensure build with GGML_VULKAN=1\n`;
+            if (selectedBackend === 'metal') cmd += `# Metal optimization enabled (Apple Silicon/AMD)\n`;
+        }
+
         // LM Studio Intel Mac check
         if (showLMStudioWarning) {
             return '# LM Studio requires Apple Silicon (M1/M2/M3/M4)\n# Not supported on Intel Macs';
@@ -51,10 +62,15 @@ const CommandExporter: React.FC<CommandExporterProps> = ({ model, hardware, isUn
 
         // Ollama
         if (inferenceSoftware === 'ollama') {
-            let cmd = `ollama run ${modelPath}`;
+            cmd += `ollama run ${modelPath}`;
 
             if (showOllamaNote) {
                 cmd = `# Intel Mac: Limited GPU support\n# Running in CPU mode\n` + cmd;
+            }
+
+            // Force CPU if selected
+            if (selectedBackend === 'cpu') {
+                cmd = `OLLAMA_LLM_LIBRARY=cpu ` + cmd;
             }
 
             // Multi-GPU env vars
@@ -76,9 +92,14 @@ const CommandExporter: React.FC<CommandExporterProps> = ({ model, hardware, isUn
 
         // LM Studio
         if (inferenceSoftware === 'lmstudio') {
-            let cmd = `lms load "${modelPath.replace('.gguf', '')}"`;
+            cmd += `lms load "${modelPath.replace('.gguf', '')}"`;
             cmd += ` --context-length ${contextLength}`;
-            cmd += ` --gpu max`;
+
+            if (selectedBackend === 'cpu') {
+                cmd += ` --gpu 0`;
+            } else {
+                cmd += ` --gpu max`;
+            }
 
             let notes = [];
             if (flashAttention) {
@@ -93,8 +114,13 @@ const CommandExporter: React.FC<CommandExporterProps> = ({ model, hardware, isUn
         }
 
         // llama.cpp (default)
-        let cmd = `llama-cli -m "${modelPath}" -c ${contextLength}`;
-        cmd += ` -ngl ${layers}`;
+        cmd += `llama-cli -m "${modelPath}" -c ${contextLength}`;
+
+        if (selectedBackend === 'cpu') {
+            cmd += ` -ngl 0`;
+        } else {
+            cmd += ` -ngl ${layers}`;
+        }
 
         // Multi-GPU tensor split
         if (gpuList && gpuList.length > 1 && !isUnified && layers > 0) {

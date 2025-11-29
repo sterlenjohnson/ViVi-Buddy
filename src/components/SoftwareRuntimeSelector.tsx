@@ -8,6 +8,9 @@ interface SoftwareRuntimeSelectorProps {
     isAppleSilicon?: boolean;
     selectedRuntime?: string;
     onRuntimeChange?: (runtime: string) => void;
+    selectedBackend?: string;
+    onBackendChange?: (backend: string) => void;
+    gpuVendor?: string;
 }
 
 export const SoftwareRuntimeSelector: React.FC<SoftwareRuntimeSelectorProps> = ({
@@ -15,7 +18,11 @@ export const SoftwareRuntimeSelector: React.FC<SoftwareRuntimeSelectorProps> = (
     isIntelMac,
     isAppleSilicon,
     selectedRuntime = 'llamacpp',
-    onRuntimeChange
+    onRuntimeChange,
+    // New props for backend selection
+    selectedBackend = 'auto',
+    onBackendChange,
+    gpuVendor
 }) => {
     // Determine runtime availability based on hardware
     const runtimes = [
@@ -49,6 +56,16 @@ export const SoftwareRuntimeSelector: React.FC<SoftwareRuntimeSelectorProps> = (
         }
     ];
 
+    // Backend definitions
+    const backends = [
+        { id: 'auto', name: 'Auto-Detect', supported: true },
+        { id: 'cuda', name: 'CUDA (NVIDIA)', supported: gpuVendor === 'nvidia' && !isAppleSilicon && !isIntelMac },
+        { id: 'rocm', name: 'ROCm (AMD)', supported: gpuVendor === 'amd' && !isAppleSilicon && !isIntelMac },
+        { id: 'metal', name: 'Metal (Apple)', supported: isAppleSilicon || (isIntelMac && gpuVendor === 'amd') },
+        { id: 'vulkan', name: 'Vulkan', supported: !isAppleSilicon }, // Vulkan on Mac is via MoltenVK, usually Metal is preferred
+        { id: 'cpu', name: 'CPU Only', supported: true }
+    ];
+
     const handleSelect = (runtimeId: string) => {
         const runtime = runtimes.find(r => r.id === runtimeId);
         if (runtime?.supported && onRuntimeChange) {
@@ -63,7 +80,7 @@ export const SoftwareRuntimeSelector: React.FC<SoftwareRuntimeSelectorProps> = (
                 <h3 className="font-semibold text-white">Model Runtime</h3>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
                 {runtimes.map((runtime) => {
                     const Icon = runtime.icon;
                     const isDisabled = !runtime.supported;
@@ -75,10 +92,10 @@ export const SoftwareRuntimeSelector: React.FC<SoftwareRuntimeSelectorProps> = (
                             onClick={() => handleSelect(runtime.id)}
                             disabled={isDisabled}
                             className={`w-full text-left p-3 rounded-lg border-2 transition-all ${isDisabled
-                                    ? 'border-gray-700 bg-gray-900/30 opacity-50 cursor-not-allowed'
-                                    : isSelected
-                                        ? 'border-teal-500 bg-teal-900/30'
-                                        : 'border-gray-600 bg-gray-900/50 hover:border-gray-500'
+                                ? 'border-gray-700 bg-gray-900/30 opacity-50 cursor-not-allowed'
+                                : isSelected
+                                    ? 'border-teal-500 bg-teal-900/30'
+                                    : 'border-gray-600 bg-gray-900/50 hover:border-gray-500'
                                 }`}
                             title={runtime.constraint || runtime.description}
                         >
@@ -109,6 +126,33 @@ export const SoftwareRuntimeSelector: React.FC<SoftwareRuntimeSelectorProps> = (
                     );
                 })}
             </div>
+
+            {/* Backend Selection (Only for llama.cpp/Ollama) */}
+            {selectedRuntime !== 'lmstudio' && (
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Cpu className="w-4 h-4 text-purple-400" />
+                        <h4 className="text-sm font-semibold text-gray-300">Inference Backend</h4>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        {backends.map(backend => {
+                            if (!backend.supported) return null;
+                            return (
+                                <button
+                                    key={backend.id}
+                                    onClick={() => onBackendChange && onBackendChange(backend.id)}
+                                    className={`px-3 py-2 rounded text-xs font-medium border transition-all ${selectedBackend === backend.id
+                                        ? 'bg-purple-900/40 border-purple-500 text-white'
+                                        : 'bg-gray-900/30 border-gray-600 text-gray-400 hover:border-gray-500'
+                                        }`}
+                                >
+                                    {backend.name}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {(isIntelMac || isAppleSilicon) && (
                 <div className="mt-3 p-2 bg-blue-900/20 border border-blue-700/50 rounded text-xs text-blue-300">
