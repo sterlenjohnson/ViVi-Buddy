@@ -1,0 +1,686 @@
+[
+    {
+        "id": "rtx_5090",
+        "name": "NVIDIA GeForce RTX 5090",
+        "vram_gb": 32,
+        "bandwidth_gbps": 1792,
+        "cuda_cores": 21760,
+        "price_usd": 1999,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "ryzen_9_9950x",
+        "name": "AMD Ryzen 9 9950X",
+        "vram_gb": 0,
+        "bandwidth_gbps": 96,
+        "cuda_cores": 0,
+        "price_usd": 649,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "ryzen_9_7950x",
+        "name": "AMD Ryzen 9 7950X",
+        "vram_gb": 0,
+        "bandwidth_gbps": 96,
+        "cuda_cores": 0,
+        "price_usd": 549,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "ryzen_9_5950x",
+        "name": "AMD Ryzen 9 5950X",
+        "vram_gb": 0,
+        "bandwidth_gbps": 51.2,
+        "cuda_cores": 0,
+        "price_usd": 349,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "ryzen_9_3950x",
+        "name": "AMD Ryzen 9 3950X",
+        "vram_gb": 0,
+        "bandwidth_gbps": 51.2,
+        "cuda_cores": 0,
+        "price_usd": 299,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "tr_7995wx",
+        "name": "AMD Ryzen Threadripper PRO 7995WX",
+        "vram_gb": 0,
+        "bandwidth_gbps": 332.8,
+        "cuda_cores": 0,
+        "price_usd": 9999,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "tr_5995wx",
+        "name": "AMD Ryzen Threadripper PRO 5995WX",
+        "vram_gb": 0,
+        "bandwidth_gbps": 204.8,
+        "cuda_cores": 0,
+        "price_usd": 6499,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "tr_3990x",
+        "name": "AMD Ryzen Threadripper 3990X",
+        "vram_gb": 0,
+        "bandwidth_gbps": 102.4,
+        "cuda_cores": 0,
+        "price_usd": 3990,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "i9_14900k",
+        "name": "Intel Core i9-14900K",
+        "vram_gb": 0,
+        "bandwidth_gbps": 89.6,
+        "cuda_cores": 0,
+        "price_usd": 589,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "i9_13900k",
+        "name": "Intel Core i9-13900K",
+        "vram_gb": 0,
+        "bandwidth_gbps": 89.6,
+        "cuda_cores": 0,
+        "price_usd": 549,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "i9_12900k",
+        "name": "Intel Core i9-12900K",
+        "vram_gb": 0,
+        "bandwidth_gbps": 76.8,
+        "cuda_cores": 0,
+        "price_usd": 399,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "i9_11900k",
+        "name": "Intel Core i9-11900K",
+        "vram_gb": 0,
+        "bandwidth_gbps": 51.2,
+        "cuda_cores": 0,
+        "price_usd": 299,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "i9_10900k",
+        "name": "Intel Core i9-10900K",
+        "vram_gb": 0,
+        "bandwidth_gbps": 45.8,
+        "cuda_cores": 0,
+        "price_usd": 249,
+        "benchmarks": {},
+        "type": "cpu"
+    },
+    {
+        "id": "mac_pro_2019_w6800x_duo",
+        "name": "Mac Pro 2019 (W6800X Duo)",
+        "vram_gb": 64,
+        "bandwidth_gbps": 512,
+        "cuda_cores": 0,
+        "price_usd": 5000,
+        "benchmarks": {
+            "llama3_8b": 96,
+            "llama3_70b_q4": 18
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "imac_2020_5700xt",
+        "name": "iMac 2020 (5700 XT 16GB)",
+        "vram_gb": 16,
+        "bandwidth_gbps": 448,
+        "cuda_cores": 0,
+        "price_usd": 1500,
+        "benchmarks": {
+            "llama3_8b": 65,
+            "qwen_14b": 40
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "mbp16_2019_5600m",
+        "name": "MacBook Pro 16\" 2019 (5600M 8GB)",
+        "vram_gb": 8,
+        "bandwidth_gbps": 394,
+        "cuda_cores": 0,
+        "price_usd": 700,
+        "benchmarks": {
+            "llama3_8b": 8
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "mbp16_2019_5500m_8gb",
+        "name": "MacBook Pro 16\" 2019 (5500M 8GB)",
+        "vram_gb": 8,
+        "bandwidth_gbps": 192,
+        "cuda_cores": 0,
+        "price_usd": 600,
+        "benchmarks": {
+            "llama3_8b": 6
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "mbp16_2019_5500m_4gb",
+        "name": "MacBook Pro 16\" 2019 (5500M 4GB)",
+        "vram_gb": 4,
+        "bandwidth_gbps": 192,
+        "cuda_cores": 0,
+        "price_usd": 500,
+        "benchmarks": {
+            "llama3_8b": 1
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "m5_max_128",
+        "name": "Apple M5 Max (128GB)",
+        "vram_gb": 128,
+        "bandwidth_gbps": 400,
+        "cuda_cores": 0,
+        "price_usd": 4200,
+        "benchmarks": {
+            "llama3_8b": 120,
+            "llama3_70b_q4": 25
+        },
+        "type": "soc"
+    },
+    {
+        "id": "m4_max_128",
+        "name": "Apple M4 Max (128GB)",
+        "vram_gb": 128,
+        "bandwidth_gbps": 546,
+        "cuda_cores": 0,
+        "price_usd": 4000,
+        "benchmarks": {
+            "llama3_8b": 110,
+            "llama3_70b_q4": 22
+        },
+        "type": "soc"
+    },
+    {
+        "id": "m2_ultra_192",
+        "name": "Apple M2 Ultra (192GB)",
+        "vram_gb": 192,
+        "bandwidth_gbps": 800,
+        "cuda_cores": 0,
+        "price_usd": 6000,
+        "benchmarks": {
+            "llama3_70b_q6": 28,
+            "llama3_405b_q3": 6
+        },
+        "type": "soc"
+    },
+    {
+        "id": "m3_max_128",
+        "name": "Apple M3 Max (128GB)",
+        "vram_gb": 128,
+        "bandwidth_gbps": 400,
+        "cuda_cores": 0,
+        "price_usd": 3500,
+        "benchmarks": {
+            "llama3_8b": 110,
+            "llama3_70b_q4": 24
+        },
+        "type": "soc"
+    },
+    {
+        "id": "rtx_5080",
+        "name": "NVIDIA GeForce RTX 5080",
+        "vram_gb": 16,
+        "bandwidth_gbps": 960,
+        "cuda_cores": 10752,
+        "price_usd": 1199,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_4090",
+        "name": "NVIDIA GeForce RTX 4090",
+        "vram_gb": 24,
+        "bandwidth_gbps": 1008,
+        "cuda_cores": 16384,
+        "price_usd": 1599,
+        "benchmarks": {
+            "llama3_8b_q4": 165,
+            "qwen_32b_q4": 75
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_4080_super",
+        "name": "NVIDIA GeForce RTX 4080 Super",
+        "vram_gb": 16,
+        "bandwidth_gbps": 736,
+        "cuda_cores": 10240,
+        "price_usd": 999,
+        "benchmarks": {
+            "llama3_8b_q4": 145
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_4080",
+        "name": "NVIDIA GeForce RTX 4080",
+        "vram_gb": 16,
+        "bandwidth_gbps": 717,
+        "cuda_cores": 9728,
+        "price_usd": 1199,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_4070_ti",
+        "name": "NVIDIA GeForce RTX 4070 Ti",
+        "vram_gb": 12,
+        "bandwidth_gbps": 504,
+        "cuda_cores": 7680,
+        "price_usd": 799,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_4070",
+        "name": "NVIDIA GeForce RTX 4070",
+        "vram_gb": 12,
+        "bandwidth_gbps": 504,
+        "cuda_cores": 5888,
+        "price_usd": 599,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_4060_ti_16gb",
+        "name": "NVIDIA GeForce RTX 4060 Ti (16GB)",
+        "vram_gb": 16,
+        "bandwidth_gbps": 288,
+        "cuda_cores": 4352,
+        "price_usd": 499,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_4060",
+        "name": "NVIDIA GeForce RTX 4060",
+        "vram_gb": 8,
+        "bandwidth_gbps": 272,
+        "cuda_cores": 3072,
+        "price_usd": 299,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_3090",
+        "name": "NVIDIA GeForce RTX 3090",
+        "vram_gb": 24,
+        "bandwidth_gbps": 936,
+        "cuda_cores": 10496,
+        "price_usd": 800,
+        "benchmarks": {
+            "llama3_8b_q4": 150,
+            "qwen_32b_q4": 65
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_3090_ti",
+        "name": "NVIDIA GeForce RTX 3090 Ti",
+        "vram_gb": 24,
+        "bandwidth_gbps": 1008,
+        "cuda_cores": 10752,
+        "price_usd": 900,
+        "benchmarks": {
+            "llama3_8b_q4": 155,
+            "qwen_32b_q4": 68
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_3080_12gb",
+        "name": "NVIDIA GeForce RTX 3080 (12GB)",
+        "vram_gb": 12,
+        "bandwidth_gbps": 912,
+        "cuda_cores": 8960,
+        "price_usd": 500,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_3080_ti",
+        "name": "NVIDIA GeForce RTX 3080 Ti",
+        "vram_gb": 12,
+        "bandwidth_gbps": 912,
+        "cuda_cores": 10240,
+        "price_usd": 1199,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_3070_ti",
+        "name": "NVIDIA GeForce RTX 3070 Ti",
+        "vram_gb": 8,
+        "bandwidth_gbps": 608,
+        "cuda_cores": 6144,
+        "price_usd": 599,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_3070",
+        "name": "NVIDIA GeForce RTX 3070",
+        "vram_gb": 8,
+        "bandwidth_gbps": 448,
+        "cuda_cores": 5888,
+        "price_usd": 500,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_3060_12gb",
+        "name": "NVIDIA GeForce RTX 3060 (12GB)",
+        "vram_gb": 12,
+        "bandwidth_gbps": 360,
+        "cuda_cores": 3584,
+        "price_usd": 329,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_3060_ti",
+        "name": "NVIDIA GeForce RTX 3060 Ti",
+        "vram_gb": 8,
+        "bandwidth_gbps": 448,
+        "cuda_cores": 4864,
+        "price_usd": 399,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_3050_8gb",
+        "name": "NVIDIA GeForce RTX 3050 (8GB)",
+        "vram_gb": 8,
+        "bandwidth_gbps": 224,
+        "cuda_cores": 2560,
+        "price_usd": 249,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_2080ti",
+        "name": "NVIDIA GeForce RTX 2080 Ti",
+        "vram_gb": 11,
+        "bandwidth_gbps": 616,
+        "cuda_cores": 4352,
+        "price_usd": 350,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_2080_super",
+        "name": "NVIDIA GeForce RTX 2080 Super",
+        "vram_gb": 8,
+        "bandwidth_gbps": 496,
+        "cuda_cores": 3072,
+        "price_usd": 699,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_2080",
+        "name": "NVIDIA GeForce RTX 2080",
+        "vram_gb": 8,
+        "bandwidth_gbps": 448,
+        "cuda_cores": 2944,
+        "price_usd": 699,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_2070_super",
+        "name": "NVIDIA GeForce RTX 2070 Super",
+        "vram_gb": 8,
+        "bandwidth_gbps": 448,
+        "cuda_cores": 2560,
+        "price_usd": 499,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_2060_12gb",
+        "name": "NVIDIA GeForce RTX 2060 (12GB)",
+        "vram_gb": 12,
+        "bandwidth_gbps": 336,
+        "cuda_cores": 2176,
+        "price_usd": 300,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_2070",
+        "name": "NVIDIA GeForce RTX 2070",
+        "vram_gb": 8,
+        "bandwidth_gbps": 448,
+        "cuda_cores": 2304,
+        "price_usd": 499,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_2060_super",
+        "name": "NVIDIA GeForce RTX 2060 Super",
+        "vram_gb": 8,
+        "bandwidth_gbps": 448,
+        "cuda_cores": 2176,
+        "price_usd": 399,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rtx_2060_6gb",
+        "name": "NVIDIA GeForce RTX 2060 (6GB)",
+        "vram_gb": 6,
+        "bandwidth_gbps": 336,
+        "cuda_cores": 1920,
+        "price_usd": 349,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rx_7900xtx",
+        "name": "AMD Radeon RX 7900 XTX",
+        "vram_gb": 24,
+        "bandwidth_gbps": 960,
+        "cuda_cores": 6144,
+        "price_usd": 999,
+        "benchmarks": {
+            "llama3_8b_q4": 125,
+            "qwen_32b_q4": 50
+        },
+        "type": "consumer"
+    },
+    {
+        "id": "rx_7900xt",
+        "name": "AMD Radeon RX 7900 XT",
+        "vram_gb": 20,
+        "bandwidth_gbps": 800,
+        "cuda_cores": 5376,
+        "price_usd": 749,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rx_7800xt",
+        "name": "AMD Radeon RX 7800 XT",
+        "vram_gb": 16,
+        "bandwidth_gbps": 624,
+        "cuda_cores": 3840,
+        "price_usd": 499,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rx_7700xt",
+        "name": "AMD Radeon RX 7700 XT",
+        "vram_gb": 12,
+        "bandwidth_gbps": 432,
+        "cuda_cores": 3456,
+        "price_usd": 449,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rx_7600xt",
+        "name": "AMD Radeon RX 7600 XT",
+        "vram_gb": 16,
+        "bandwidth_gbps": 288,
+        "cuda_cores": 2048,
+        "price_usd": 329,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rx_6900xt",
+        "name": "AMD Radeon RX 6900 XT",
+        "vram_gb": 16,
+        "bandwidth_gbps": 512,
+        "cuda_cores": 5120,
+        "price_usd": 550,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rx_6800xt",
+        "name": "AMD Radeon RX 6800 XT",
+        "vram_gb": 16,
+        "bandwidth_gbps": 512,
+        "cuda_cores": 4608,
+        "price_usd": 649,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rx_6700xt",
+        "name": "AMD Radeon RX 6700 XT",
+        "vram_gb": 12,
+        "bandwidth_gbps": 384,
+        "cuda_cores": 2560,
+        "price_usd": 479,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rx_6600xt",
+        "name": "AMD Radeon RX 6600 XT",
+        "vram_gb": 8,
+        "bandwidth_gbps": 256,
+        "cuda_cores": 2048,
+        "price_usd": 379,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "rx_8000_high",
+        "name": "AMD Radeon RX 8000 (High-End Rumored)",
+        "vram_gb": 16,
+        "bandwidth_gbps": 640,
+        "cuda_cores": 0,
+        "price_usd": 699,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "arc_a770_16gb",
+        "name": "Intel Arc A770 (16GB)",
+        "vram_gb": 16,
+        "bandwidth_gbps": 560,
+        "cuda_cores": 4096,
+        "price_usd": 299,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "arc_a750",
+        "name": "Intel Arc A750",
+        "vram_gb": 8,
+        "bandwidth_gbps": 512,
+        "cuda_cores": 3584,
+        "price_usd": 249,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "arc_a580",
+        "name": "Intel Arc A580",
+        "vram_gb": 8,
+        "bandwidth_gbps": 512,
+        "cuda_cores": 3072,
+        "price_usd": 179,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "arc_a380",
+        "name": "Intel Arc A380",
+        "vram_gb": 6,
+        "bandwidth_gbps": 186,
+        "cuda_cores": 1024,
+        "price_usd": 139,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "arc_b580",
+        "name": "Intel Arc B580 (Battlemage)",
+        "vram_gb": 12,
+        "bandwidth_gbps": 456,
+        "cuda_cores": 0,
+        "price_usd": 249,
+        "benchmarks": {},
+        "type": "consumer"
+    },
+    {
+        "id": "a100_80gb",
+        "name": "NVIDIA A100 (80GB PCIe)",
+        "vram_gb": 80,
+        "bandwidth_gbps": 1935,
+        "cuda_cores": 6912,
+        "price_usd": 15000,
+        "benchmarks": {
+            "llama3_8b": 100,
+            "llama3_70b": 18
+        },
+        "type": "enterprise"
+    },
+    {
+        "id": "h100_80gb",
+        "name": "NVIDIA H100 (80GB HBM3)",
+        "vram_gb": 80,
+        "bandwidth_gbps": 3350,
+        "cuda_cores": 14592,
+        "price_usd": 30000,
+        "benchmarks": {
+            "llama3_8b": 200,
+            "llama3_70b": 30
+        },
+        "type": "enterprise"
+    }
+]

@@ -1,0 +1,82 @@
+[
+    {
+        "id": "ddr5_6400_dual",
+        "name": "DDR5-6400 (Dual Channel)",
+        "type": "DDR5",
+        "speed_mt_s": 6400,
+        "channels": 2,
+        "bandwidth_gbps": 102.4
+    },
+    {
+        "id": "ddr5_6000_dual",
+        "name": "DDR5-6000 (Dual Channel)",
+        "type": "DDR5",
+        "speed_mt_s": 6000,
+        "channels": 2,
+        "bandwidth_gbps": 96.0
+    },
+    {
+        "id": "ddr5_5600_dual",
+        "name": "DDR5-5600 (Dual Channel)",
+        "type": "DDR5",
+        "speed_mt_s": 5600,
+        "channels": 2,
+        "bandwidth_gbps": 89.6
+    },
+    {
+        "id": "ddr5_5200_dual",
+        "name": "DDR5-5200 (Dual Channel)",
+        "type": "DDR5",
+        "speed_mt_s": 5200,
+        "channels": 2,
+        "bandwidth_gbps": 83.2
+    },
+    {
+        "id": "ddr5_4800_dual",
+        "name": "DDR5-4800 (Dual Channel)",
+        "type": "DDR5",
+        "speed_mt_s": 4800,
+        "channels": 2,
+        "bandwidth_gbps": 76.8
+    },
+    {
+        "id": "ddr4_3600_dual",
+        "name": "DDR4-3600 (Dual Channel)",
+        "type": "DDR4",
+        "speed_mt_s": 3600,
+        "channels": 2,
+        "bandwidth_gbps": 57.6
+    },
+    {
+        "id": "ddr4_3200_dual",
+        "name": "DDR4-3200 (Dual Channel)",
+        "type": "DDR4",
+        "speed_mt_s": 3200,
+        "channels": 2,
+        "bandwidth_gbps": 51.2
+    },
+    {
+        "id": "ddr4_2666_dual",
+        "name": "DDR4-2666 (Dual Channel)",
+        "type": "DDR4",
+        "speed_mt_s": 2666,
+        "channels": 2,
+        "bandwidth_gbps": 42.6
+    },
+    {
+        "id": "ddr5_quad_5600",
+        "name": "DDR5-5600 (Quad Channel - HEDT)",
+        "type": "DDR5",
+        "speed_mt_s": 5600,
+        "channels": 4,
+        "bandwidth_gbps": 179.2
+    },
+    {
+        "id": "ddr5_octa_5200",
+        "name": "DDR5-5200 (Octa Channel - Pro)",
+        "type": "DDR5",
+        "speed_mt_s": 5200,
+        "channels": 8,
+        "bandwidth_gbps": 332.8
+    }
+]

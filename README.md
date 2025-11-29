@@ -1,147 +1,193 @@
 # ViVi Buddy
 
-**Video RAM Visualizer** - A modern, interactive VRAM calculator for LLM inference and AI model deployment.
+**Video RAM Visualizer** - A comprehensive VRAM calculator and educational tool for LLM inference planning.
 
-![ViVi Buddy Screenshot](screenshot.png)
+[![Version](https://img.shields.io/badge/version-5.2-blue)](https://github.com/sterlenjohnson/ViVi-Buddy)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![React](https://img.shields.io/badge/React-18-61dafb)](https://reactjs.org/)
 
 ## 🌟 Features
 
 ### 📊 Accurate VRAM Calculations
-- **Model Weights**: Calculates memory needed based on model size and  precision (FP16, INT8, various GGUF quantizations)
-- **KV Cache**: Accounts for key-value cache based on context length and batch size
-- **Activations**: Estimates activation memory during inference
-- **Layer Distribution**: Smart GPU/CPU layer split with real-time optimization
+- **Model Weights**: Precise calculations for FP16, Q8, Q6_K, Q5_K, Q4_K, Q3_K, Q2_K quantizations
+- **KV Cache**: Dynamic calculation based on context length, hidden size, and layer count
+- **Real-time Estimates**: Instant feedback as you adjust model parameters
+- **Multi-GPU Support**: Tensor splitting across multiple GPUs with bandwidth considerations
+
+### 🖥️ Hardware Support (November 2025)
+
+**NVIDIA GPUs:**
+- ✅ RTX 50-series (Blackwell): 5090 (32GB), 5080 (16GB)
+- ✅ RTX 40-series (Lovelace): 4090, 4080 Super, 4060 Ti 16GB
+- ✅ RTX 30-series (Ampere): 3090/Ti, 3060 12GB
+
+**Apple Silicon:**
+- ✅ M5 series (Late 2025): Base, Pro, Max
+- ✅ M4 series: Base, Pro, Max
+- ✅ M3/M2/M1 series: All variants with unified memory support
+
+**AMD Radeon:**
+- ✅ RDNA 3: RX 7900 XTX/XT (24GB/20GB)
+- ✅ ROCm support tracking for Linux users
 
 ### 🎯 Two Modes for Every User
-- **Basic Mode**: Simplified interface for quick estimates - just select your hardware and model
-- **Advanced Mode**: Full control over GPU vendor, RAM specs, storage type, and advanced configurations
+- **Basic Mode**: Quick hardware selection and model estimation
+- **Advanced Mode**: Granular control over GPUs, RAM, quantization, and backends
 
-### 🔧 Hardware Support
-- **Discrete GPUs**: NVIDIA, AMD, Intel Arc support with multi-GPU configurations
-- **Apple Silicon**: Native support for unified memory (M1/M2/M3 Macs)
-- **Mismatched GPUs**: Configure different GPU models in the same system
+### 💡 Smart Tools & Features
+- **Auto-Detect Hardware**: One-click detection of your system specs
+- **CLI Command Export**: Generate llama.cpp, Ollama, or LM Studio commands
+- **GPU Backend Selection**: Choose CUDA, Metal, Vulkan, ROCm, or SYCL
+- **FlashAttention Support**: Toggle FA for supported backends
+- **Save/Load Configs**: Persist your hardware setups
+- **Performance Estimates**: Relative speed multipliers based on hardware
 
-### 💾 Memory Size Sliders
-- **Interactive Sliders**: Adjust VRAM and KV cache sizes with visual feedback
-- **Reverse Calculation**: Change memory targets to see required model parameters
-- **Real-time Updates**: See memory impact instantly as you adjust parameters
-
-### 🎨 Modern UI/UX
-- **Dark Theme**: Easy on the eyes with glassmorphism effects
-- **Responsive Design**: Works on desktop, tablet, and mobile
-- **Tooltips**: Hover over any technical term for helpful explanations
-- **Hardware Presets**: Quick-select common GPU configurations (RTX 4090, Mac Studio, etc.)
-
-### 💡 Smart Features
-- **Save/Load Configurations**: Save your hardware setups for later
-
-- **CLI Export**: Generate llama.cpp commands for your configuration
-- **Performance Estimates**: Get relative performance multipliers
-- **Constraint Enforcement**: Auto-optimize layer splits to fit available memory
-
-## 📣 Recent Updates
-
-- **Removed** the green lock (enforce‑constraints) toggle from the top toolbar.
-- **Simplified** Basic Mode UI: now only RAM slider and a new **GPU Backend** selector (Auto, CUDA, Metal, Vulkan, ROCm, SYCL).
-- **Auto‑Detect** hardware button added to the header for quick detection of RAM, CPU cores, OS, chip type, and GPU info.
-- **CLI Export** now includes `--gpu-backend <backend>` flag reflecting the selected backend.
-- **KV‑Cache size** slider added to model cards with colored styling.
-- Updated quality metrics and backend recommendation logic (backend selectable in UI).
+### 📚 Educational Resources
+- **Learn Page**: Comprehensive guides on LLM inference, hardware, quantization
+- **Interactive Benchmarks**: Real-world performance data across hardware
+- **Citations & Research**: Links to papers (Attention Is All You Need, LLaMA, FlashAttention, QLoRA)
+- **Compare Mode**: Side-by-side hardware comparison
 
 ## 🚀 Quick Start
 
-### Online Version
-Use ViVi Buddy locally by following the installation instructions below.
-
-### Local Development
+### Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/sterlenjohnson/ViVi-Buddy.git
-cd vivi-buddy
+cd ViVi-Buddy
 
 # Install dependencies
 npm install
 
 # Start development server
 npm start
+```
 
-# Build for production
+Visit `http://localhost:3000` to use the app.
+
+### Production Build
+
+```bash
 npm run build
+serve -s build
 ```
 
 ## 📖 Usage Examples
 
-### Example 1: Running Llama 3.1 8B on RTX 4090
-1. Click "RTX 4090 24GB" hardware preset
-2. Enter model: 8B parameters, q4_k_m precision
-3. Set context length: 4096
-4. Results show: ~5GB VRAM needed, can run fully on GPU
+### Example 1: Llama 3.1 8B on RTX 4090
+1. Select "RTX 4090 24GB" hardware preset
+2. Enter: 8B parameters, Q4_K_M quantization
+3. Context length: 4096 tokens
+4. **Result**: ~5-6GB VRAM, runs entirely on GPU at ~165 tok/s
 
-### Example 2: Llama 3.1 70B on Mac Studio Ultra
-1. Toggle to "Unified Memory" mode
-2. Set 192GB unified memory
-3. Enter model: 70B parameters, q4_k_m precision
-4. Context: 8192
-5. Results show: ~38GB needed, plenty of headroom
+### Example 2: Llama 3.1 70B on Mac Studio M4 Max (128GB)
+1. Toggle "Unified Memory" mode
+2. Set 128GB unified memory
+3. Enter: 70B parameters, Q5_K_M quantization
+4. Context: 8192 tokens
+5. **Result**: ~52GB used, comfortable fit at ~22-25 tok/s
 
-### Example 3: Mixtral 8x7B with Limited VRAM
-1. Set hardware: RTX 3060 12GB
-2. Enter model: 56B parameters (effective), q4_k_m
-3. Enable "Hybrid" mode
-4. Adjust GPU layers slider to fit within 12GB
-5. See CPU layer count and performance impact
+### Example 3: Qwen 2.5 32B on RTX 3090 (Hybrid Mode)
+1. Set hardware: RTX 3090 24GB
+2. Enter: 32B parameters, Q4_K_M
+3. Context: 4096 tokens
+4. Enable "Hybrid" mode if memory is tight
+5. Adjust GPU layers to fit within 24GB
+6. **Result**: Optimized layer split with performance estimate
+
+## 🎓 Learn Page Topics
+
+Access comprehensive guides from the **Learn** tab:
+
+- **LLM Inference Basics**: How inference works, memory requirements, bandwidth bottlenecks
+- **Hardware Guide**: GPU vs CPU, Apple Silicon, bandwidth comparisons
+- **Quantization Explained**: Q8, Q6, Q4, Q3, Q2 quality/size tradeoffs
+- **Offloading Concepts**: When to offload, performance impact, PCIe bottlenecks
+- **Recommended Workflows**: Budget builds, power user setups
+- **Glossary**: Quick reference for technical terms
+
+All sections include **citations** and links to research papers.
 
 ## 🛠️ Technology Stack
 
-- **React 18**: Modern UI framework
-- **Tailwind CSS**: Utility-first styling
-- **Lucide React**: Beautiful icon library
-- **Create React App**: Zero-config build setup
+- **React 18** - Modern UI framework
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **Lucide React** - Icon library
+- **React Router** - Multi-page navigation
 
-## 📝 Documentation
+## 🔧 Advanced Features
 
-### Understanding the Results
+### CLI Command Export
+Export ready-to-use commands for:
+- **llama.cpp**: Full control with `-ngl`, `--tensor-split`, backend flags
+- **Ollama**: Simple `ollama run` with env vars for multi-GPU
+- **LM Studio**: Commands with optimal settings
 
-- **Weights (GPU)**: Model parameters loaded on GPU
-- **KV Cache**: Memory for conversation history
-- **Activations**: Temporary memory during token generation
-- **CPU Layers**: Layers offloaded to system RAM
-- **Performance Multiplier**: Relative inference speed estimate
+### Multi-GPU Configurations
+- Dual/Triple GPU setups (e.g., 2x RTX 3090 = 48GB)
+- Tensor splitting based on VRAM ratios
+- Mismatched GPU support (different models in one system)
 
-### Precision Types
+### Inference Software Integration
+- Backend-specific recommendations (CUDA for NVIDIA, Metal for Apple, etc.)
+- FlashAttention toggle for supported models
+- RoPE scaling for long-context models
+- Model-specific optimizations
 
-- `fp16`: Full half-precision, highest quality
-- `q8_0`: 8-bit quantization, minimal quality loss
-- `q4_k_m`: 4-bit with k-quants, good balance
-- `q2_k`: 2-bit, most compressed, some quality loss
+## 📊 Benchmarks Page
+
+Real-world performance data from the community:
+- Tokens/second across different hardware
+- Model size vs VRAM trade-offs
+- Quantization impact on speed and quality
+- Multi-GPU scaling efficiency
+
+## 🔬 Research Integration
+
+ViVi Buddy calculations are based on:
+- **[llama.cpp](https://github.com/ggerganov/llama.cpp)** - Core memory model
+- **[Hugging Face Transformers](https://huggingface.co/docs/transformers)** - Architecture specs
+- **Community benchmarks** from r/LocalLLaMA
+- **Latest research** (2024-2025):
+  - Power-of-Two 3-bit quantization
+  - Test-time compute scaling
+  - Deterministic inference challenges
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! Areas of interest:
+- Hardware database updates (new GPUs, specs)
+- Model architecture additions (e.g., Qwen 3, Gemma 2)
+- Benchmark data submissions
+- UI/UX improvements
 
+### How to Contribute
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature/NewHardware`
+3. Make your changes with clear commit messages
+4. Submit a Pull Request with description
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- Inspired by the LLM community's need for accurate VRAM estimation
-- Built with love for AI enthusiasts and developers
-- Special thanks to all contributors and users
+- **llama.cpp** team for the inference engine reference
+- **r/LocalLLaMA** community for benchmarks and hardware insights
+- **Hugging Face** for model hosting and documentation
+- All contributors and users who submitted hardware data
 
-## 📬 Contact
+## 📬 Contact & Support
 
-- GitHub Issues: [Report bugs or request features](https://github.com/sterlenjohnson/ViVi-Buddy/issues)
-- Discussions: [Join the community](https://github.com/sterlenjohnson/ViVi-Buddy/discussions)
+- **Issues**: [GitHub Issues](https://github.com/sterlenjohnson/ViVi-Buddy/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/sterlenjohnson/ViVi-Buddy/discussions)
+- **Updates**: Watch this repo for new hardware support and features
 
 ---
 
-Made with ❤️ for the AI community
-# ViVi-Buddy
+**Note:** Hardware specs and benchmarks are maintained separately in local research files. For the latest GPU releases and performance data, the app is updated within 1 month of hardware launch.
+
+Made with ❤️ for the AI community | Updated November 2025
