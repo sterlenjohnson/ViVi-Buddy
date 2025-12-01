@@ -259,6 +259,14 @@ export const optimizeLayerSplit = (model: Model, gpuList: GPU[], systemRAMAmount
                 }
 
                 // If we reach here, we can't downgrade settings further. 
+                // Try switching MODE if allowed
+                if (currentModel.mode === 'gpuOnly') {
+                    // Switch to Hybrid to use RAM
+                    currentModel.mode = 'hybrid';
+                    continue; // Retry with new mode limits
+                }
+
+                // If we reach here, we can't downgrade settings further and mode switching didn't help (or we are already Hybrid/CPU).
                 // We must break to avoid infinite loop. The model simply doesn't fit even at min settings.
                 break;
             }
@@ -278,14 +286,9 @@ export const optimizeLayerSplit = (model: Model, gpuList: GPU[], systemRAMAmount
         newGpuLayers = currentModel.numLayers;
         newCpuLayers = 0;
 
-        // If strict and still doesn't fit (after downgrade), we clamp layers as a last resort visual indication
-        if (enforceConstraints) {
-            const totalRequired = vramPerLayer * currentModel.numLayers;
-            if (totalRequired > totalAvailableVram) {
-                const maxFittingLayers = Math.floor(totalAvailableVram / vramPerLayer);
-                newGpuLayers = Math.min(currentModel.numLayers, maxFittingLayers);
-            }
-        }
+        // NO CLAMPING: If it doesn't fit, we return full layers.
+        // This causes the memory bar to turn RED (Overcapacity), which is truthful.
+        // The user explicitly requested "Don't randomly decrease vram".
     } else if (currentModel.mode === 'cpuOnly') {
         newGpuLayers = 0;
         newCpuLayers = currentModel.numLayers;
@@ -301,17 +304,7 @@ export const optimizeLayerSplit = (model: Model, gpuList: GPU[], systemRAMAmount
         newGpuLayers = Math.min(currentModel.numLayers, totalLayersFittingVram);
         newCpuLayers = currentModel.numLayers - newGpuLayers;
 
-        // If strict, check if RAM can hold the rest
-        if (enforceConstraints) {
-            const ramNeeded = newCpuLayers * vramPerLayer; // Approx
-            if (ramNeeded > totalAvailableRam) {
-                // If RAM overflows, we technically should have downgraded earlier.
-                // But if we are here, it means even min settings don't fit.
-                // We clamp CPU layers to what fits in RAM.
-                const maxCpuLayers = Math.floor(totalAvailableRam / vramPerLayer);
-                newCpuLayers = Math.min(newCpuLayers, maxCpuLayers);
-            }
-        }
+        // NO CLAMPING for RAM either. If it overflows RAM, let it overflow.
     }
 
     return { ...currentModel, gpuLayers: newGpuLayers, cpuLayers: newCpuLayers };
