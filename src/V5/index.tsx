@@ -554,6 +554,9 @@ const VRAMVisualizerV5: React.FC = () => {
                     applyPreset={applyPreset}
                     isUnified={isUnified}
                     hardware={hardwareObj}
+                    allowOverload={allowOverload}
+                    gpuList={gpuList}
+                    systemRamSize={systemRamSize}
                 />
             </div>
         </div>

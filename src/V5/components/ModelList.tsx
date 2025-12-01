@@ -41,6 +41,9 @@ interface ModelListProps {
     applyPreset: (id: number, preset: string) => void;
     isUnified: boolean;
     hardware: Hardware;
+    allowOverload: boolean;
+    gpuList: any[];
+    systemRamSize: number;
 }
 
 const LabeledInput: React.FC<LabeledInputProps> = ({ label, value, setter, type = 'range', min = 0, max = 100, step = 1, unit = '', color = 'slate', borderColor = null, disabled = false, warning = null }) => {
@@ -109,7 +112,7 @@ const SelectInput: React.FC<SelectInputProps> = ({ label, value, setter, options
     </div>
 );
 
-const ModelList: React.FC<ModelListProps> = ({ models, updateModel, addModel, removeModel, applyPreset, isUnified, hardware }) => {
+const ModelList: React.FC<ModelListProps> = ({ models, addModel, removeModel, updateModel, applyPreset, isUnified, hardware, allowOverload, gpuList, systemRamSize }) => {
     // Constraints toggle state per model
     const [constraintsEnabled, setConstraintsEnabled] = React.useState<Record<number, boolean>>({});
 
@@ -246,252 +249,295 @@ const ModelList: React.FC<ModelListProps> = ({ models, updateModel, addModel, re
 
                     <CommandExporter model={model} hardware={hardware} isUnified={isUnified} />
 
+                    {/* Model Configuration Controls */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
-                        <div>
-                            <LabeledInput
-                                label={<span className="flex items-center">Params (B)<Tooltip text="Model size in billions of parameters. Larger models need more VRAM but generally perform better." /></span>}
-                                value={model.modelSize}
-                                setter={v => updateModel(model.id, 'modelSize', v)}
-                                min={0.5}
-                                max={180}
-                                step={0.5}
-                                unit="B"
-                                color="blue"
-                            />
-                            <SelectInput
-                                label={<span className="flex items-center">Precision<Tooltip text="Quantization level: fp16=full quality, q4_k_m=4-bit (smaller, faster), int8=8-bit. Lower precision uses less VRAM." /></span>}
-                                value={model.precision}
-                                setter={v => updateModel(model.id, 'precision', v)}
-                                options={Object.keys(precisionBits).map(k => ({ value: k, label: k }))}
-                                color="blue"
-                            />
-                        </div>
-                        <div>
-                            <LabeledInput
-                                label="Weights Size"
-                                value={Number(getWeightsGB(model).toFixed(2))}
-                                setter={(v) => handleWeightSizeChange(model, v)}
-                                min={0.1}
-                                max={192}
-                                step={0.1}
-                                unit="GB"
-                                color="blue"
-                            />
-                            <LabeledInput
-                                label="KV Cache Size"
-                                value={Number(getKVGB(model).toFixed(2))}
-                                setter={(v) => handleKVSizeChange(model, v)}
-                                min={0.01}
-                                max={128}
-                                step={0.01}
-                                unit="GB"
-                                color="purple"
-                            />
-                        </div>
-                        <div>
-                            <LabeledInput
-                                label={<span className="flex items-center">Context Length<Tooltip text="Maximum conversation length in tokens. Longer context needs more VRAM but remembers more history." /></span>}
-                                value={model.contextLength}
-                                setter={v => updateModel(model.id, 'contextLength', v)}
-                                min={512}
-                                max={128000}
-                                step={512}
-                                color="purple"
-                            />
-                            <SelectInput
-                                label={<span className="flex items-center">KV Precision<Tooltip text="Precision for Key-Value cache. fp16=full quality, int8=uses less VRAM but may slightly reduce quality." /></span>}
-                                value={model.kvCachePrecision}
-                                setter={v => updateModel(model.id, 'kvCachePrecision', v)}
-                                options={['fp16', 'int8'].map(k => ({ value: k, label: k }))}
-                                color="purple"
-                            />
-                            <LabeledInput
-                                label={<span className="flex items-center">Batch Size<Tooltip text="Number of sequences processed in parallel. Larger batches use more VRAM but increase throughput." /></span>}
-                                value={model.batchSize}
-                                setter={v => updateModel(model.id, 'batchSize', v)}
-                                min={1}
-                                max={512}
-                                step={1}
-                                color="purple"
-                                borderColor="orange"
-                            />
-                        </div>
-                        <div>
-                            <div className="mb-2 p-2 rounded-lg shadow-inner bg-indigo-900/20 border-l-2" style={{ borderColor: (colorMap as any).indigo }}>
-                                <div className="flex justify-between items-center mb-1">
-                                    <label className="text-xs font-medium text-slate-200 flex items-center">
-                                        Flash Attention<Tooltip text="Optimized attention implementation. Reduces VRAM usage and increases speed. Only supported by LM Studio and llama.cpp (with FA build)." />
-                                    </label>
-                                </div>
-                                <div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded">
-                                    <button
-                                        onClick={() => updateModel(model.id, 'flashAttention', false)}
-                                        disabled={hardware.inferenceSoftware === 'ollama'}
-                                        className={`flex-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${!model.flashAttention
-                                            ? 'bg-slate-600 text-white'
-                                            : 'text-slate-400 hover:text-white hover:bg-slate-700'
-                                            } ${hardware.inferenceSoftware === 'ollama' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        OFF
-                                    </button>
-                                    <button
-                                        onClick={() => updateModel(model.id, 'flashAttention', true)}
-                                        disabled={hardware.inferenceSoftware === 'ollama'}
-                                        className={`flex-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.flashAttention
-                                            ? 'bg-indigo-600 text-white'
-                                            : 'text-slate-400 hover:text-white hover:bg-slate-700'
-                                            } ${hardware.inferenceSoftware === 'ollama' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        ON
-                                    </button>
-                                </div>
-                                {hardware.inferenceSoftware === 'ollama' && (
-                                    <p className="text-[9px] text-yellow-400 mt-1">Not supported by Ollama</p>
-                                )}
-                            </div>
-                            <LabeledInput
-                                label={<span className="flex items-center">Total Layers<Tooltip text="Number of transformer layers in the model. More layers = better quality but more VRAM needed." /></span>}
-                                value={model.numLayers}
-                                setter={v => updateModel(model.id, 'numLayers', v)}
-                                min={1}
-                                max={200}
-                                step={1}
-                                color="cyan"
-                                borderColor="emerald"
-                            />
-                            {!isUnified && (hardware.gpuEnabled !== false) && (
+                        {/* CALCULATE DYNAMIC MAX VALUES BASED ON OVERLOAD STATE */}
+                        {(() => {
+                            let maxModelSize = 180; // Default: No restrictions
+                            let maxContextLength = 128000; // Default: No restrictions
+
+                            if (!allowOverload) {
+                                // Calculate available resources
+                                const totalVRAM = gpuList.reduce((sum: number, gpu: any) => sum + gpu.vram, 0);
+                                const availableVRAM = Math.max(0, totalVRAM - 2); // Reserve 2GB overhead
+                                const availableRAM = systemRamSize * 0.75; // Reserve 25% for OS
+
+                                // Calculate max model size based on mode
+                                if (model.mode === 'gpuOnly' && availableVRAM > 0) {
+                                    // Rough estimate: ~0.6 GB per B param for q4
+                                    maxModelSize = Math.floor(availableVRAM / 0.6);
+                                } else if (model.mode === 'hybrid') {
+                                    maxModelSize = Math.floor((availableVRAM + availableRAM) / 0.6);
+                                } else if (model.mode === 'cpuOnly') {
+                                    maxModelSize = Math.floor(availableRAM / 0.6);
+                                }
+
+                                // Calculate max context based on VRAM
+                                if (availableVRAM >= 16) {
+                                    maxContextLength = 32768;
+                                } else if (availableVRAM >= 8) {
+                                    maxContextLength = 8192;
+                                } else {
+                                    maxContextLength = 4096;
+                                }
+
+                                // Ensure current value doesn't exceed new max
+                                maxModelSize = Math.max(1, maxModelSize);
+                                maxContextLength = Math.max(512, maxContextLength);
+                            }
+
+                            return (
                                 <>
-                                    <LabeledInput
-                                        label={<span className="flex items-center">GPU Layers<Tooltip text="Number of layers loaded on GPU. More GPU layers = faster but needs more VRAM." /></span>}
-                                        value={model.gpuLayers}
-                                        setter={v => updateModel(model.id, 'gpuLayers', v)}
-                                        min={0}
-                                        max={model.numLayers}
-                                        disabled={model.mode !== 'hybrid'}
-                                        color="indigo"
-                                        borderColor="emerald"
-                                    />
-                                    <div className="text-center text-[10px] font-mono text-slate-400 mt-1 bg-slate-900/50 p-1 rounded border border-slate-700/50">
-                                        CPU Layers: <span className="text-emerald-400 font-bold">{Math.max(0, model.numLayers - model.gpuLayers)}</span>
+                                    <div>
+                                        <LabeledInput
+                                            label={<span className="flex items-center">Params (B)<Tooltip text="Model size in billions of parameters. Larger models need more VRAM but generally perform better." /></span>}
+                                            value={model.modelSize}
+                                            setter={v => updateModel(model.id, 'modelSize', v)}
+                                            min={0.5}
+                                            max={maxModelSize}
+                                            step={0.5}
+                                            unit="B"
+                                            color="blue"
+                                        />
+                                        <SelectInput
+                                            label={<span className="flex items-center">Precision<Tooltip text="Quantization level: fp16=full quality, q4_k_m=4-bit (smaller, faster), int8=8-bit. Lower precision uses less VRAM." /></span>}
+                                            value={model.precision}
+                                            setter={v => updateModel(model.id, 'precision', v)}
+                                            options={Object.keys(precisionBits).map(k => ({ value: k, label: k }))}
+                                            color="blue"
+                                        />
+                                    </div>
+                                    <div>
+                                        <LabeledInput
+                                            label="Weights Size"
+                                            value={Number(getWeightsGB(model).toFixed(2))}
+                                            setter={(v) => handleWeightSizeChange(model, v)}
+                                            min={0.1}
+                                            max={192}
+                                            step={0.1}
+                                            unit="GB"
+                                            color="blue"
+                                        />
+                                        <LabeledInput
+                                            label="KV Cache Size"
+                                            value={Number(getKVGB(model).toFixed(2))}
+                                            setter={(v) => handleKVSizeChange(model, v)}
+                                            min={0.01}
+                                            max={128}
+                                            step={0.01}
+                                            unit="GB"
+                                            color="purple"
+                                        />
+                                    </div>
+                                    <div>
+                                        <LabeledInput
+                                            label={<span className="flex items-center">Context Length<Tooltip text="Maximum conversation length in tokens. Longer context needs more VRAM but remembers more history." /></span>}
+                                            value={model.contextLength}
+                                            setter={v => updateModel(model.id, 'contextLength', v)}
+                                            min={512}
+                                            max={maxContextLength}
+                                            step={512}
+                                            color="purple"
+                                        />
+                                        <SelectInput
+                                            label={<span className="flex items-center">KV Precision<Tooltip text="Precision for Key-Value cache. fp16=full quality, int8=uses less VRAM but may slightly reduce quality." /></span>}
+                                            value={model.kvCachePrecision}
+                                            setter={v => updateModel(model.id, 'kvCachePrecision', v)}
+                                            options={['fp16', 'int8'].map(k => ({ value: k, label: k }))}
+                                            color="purple"
+                                        />
+                                        <LabeledInput
+                                            label={<span className="flex items-center">Batch Size<Tooltip text="Number of sequences processed in parallel. Larger batches use more VRAM but increase throughput." /></span>}
+                                            value={model.batchSize}
+                                            setter={v => updateModel(model.id, 'batchSize', v)}
+                                            min={1}
+                                            max={512}
+                                            step={1}
+                                            color="purple"
+                                            borderColor="orange"
+                                        />
+                                    </div>
+                                    <div>
+                                        <div className="mb-2 p-2 rounded-lg shadow-inner bg-indigo-900/20 border-l-2" style={{ borderColor: (colorMap as any).indigo }}>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-xs font-medium text-slate-200 flex items-center">
+                                                    Flash Attention<Tooltip text="Optimized attention implementation. Reduces VRAM usage and increases speed. Only supported by LM Studio and llama.cpp (with FA build)." />
+                                                </label>
+                                            </div>
+                                            <div className="flex items-center gap-2 bg-slate-900/50 p-1 rounded">
+                                                <button
+                                                    onClick={() => updateModel(model.id, 'flashAttention', false)}
+                                                    disabled={hardware.inferenceSoftware === 'ollama'}
+                                                    className={`flex-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${!model.flashAttention
+                                                        ? 'bg-slate-600 text-white'
+                                                        : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                                                        } ${hardware.inferenceSoftware === 'ollama' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    OFF
+                                                </button>
+                                                <button
+                                                    onClick={() => updateModel(model.id, 'flashAttention', true)}
+                                                    disabled={hardware.inferenceSoftware === 'ollama'}
+                                                    className={`flex-1 px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.flashAttention
+                                                        ? 'bg-indigo-600 text-white'
+                                                        : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                                                        } ${hardware.inferenceSoftware === 'ollama' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                >
+                                                    ON
+                                                </button>
+                                            </div>
+                                            {hardware.inferenceSoftware === 'ollama' && (
+                                                <p className="text-[9px] text-yellow-400 mt-1">Not supported by Ollama</p>
+                                            )}
+                                        </div>
+                                        <LabeledInput
+                                            label={<span className="flex items-center">Total Layers<Tooltip text="Number of transformer layers in the model. More layers = better quality but more VRAM needed." /></span>}
+                                            value={model.numLayers}
+                                            setter={v => updateModel(model.id, 'numLayers', v)}
+                                            min={1}
+                                            max={200}
+                                            step={1}
+                                            color="cyan"
+                                            borderColor="emerald"
+                                        />
+                                        {!isUnified && (hardware.gpuEnabled !== false) && (
+                                            <>
+                                                <LabeledInput
+                                                    label={<span className="flex items-center">GPU Layers<Tooltip text="Number of layers loaded on GPU. More GPU layers = faster but needs more VRAM." /></span>}
+                                                    value={model.gpuLayers}
+                                                    setter={v => updateModel(model.id, 'gpuLayers', v)}
+                                                    min={0}
+                                                    max={model.numLayers}
+                                                    disabled={model.mode !== 'hybrid'}
+                                                    color="indigo"
+                                                    borderColor="emerald"
+                                                />
+                                                <div className="text-center text-[10px] font-mono text-slate-400 mt-1 bg-slate-900/50 p-1 rounded border border-slate-700/50">
+                                                    CPU Layers: <span className="text-emerald-400 font-bold">{Math.max(0, model.numLayers - model.gpuLayers)}</span>
+                                                </div>
+                                            </>
+                                        )}
+                                        {isUnified && (
+                                            <div className="text-xs text-slate-400 italic mt-2 text-center border border-slate-600/50 p-2 rounded bg-slate-900/30 backdrop-blur-sm">
+                                                Unified Memory Managed Automatically
+                                            </div>
+                                        )}
                                     </div>
                                 </>
-                            )}
-                            {isUnified && (
-                                <div className="text-xs text-slate-400 italic mt-2 text-center border border-slate-600/50 p-2 rounded bg-slate-900/30 backdrop-blur-sm">
-                                    Unified Memory Managed Automatically
-                                </div>
-                            )}
-                        </div>
+                            );
+                        })()}
                     </div>
 
                     {/* LM Studio Advanced Settings */}
-                    {hardware.inferenceSoftware === 'lmstudio' && (
-                        <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                            <h4 className="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-                                <span className="text-blue-400">⚙️</span> LM Studio Advanced Settings
-                            </h4>
+                    {
+                        hardware.inferenceSoftware === 'lmstudio' && (
+                            <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                                <h4 className="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
+                                    <span className="text-blue-400">⚙️</span> LM Studio Advanced Settings
+                                </h4>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {/* Memory Optimization Toggles */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-medium text-slate-300 block mb-2">Memory Optimization</label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {/* Memory Optimization Toggles */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-medium text-slate-300 block mb-2">Memory Optimization</label>
 
-                                    <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-emerald-500/30">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-200">KV Cache FP16</span>
-                                            <Tooltip text="Store KV cache in 16-bit precision. Reduces memory usage by ~50% with minimal quality impact." />
+                                        <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-emerald-500/30">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-slate-200">KV Cache FP16</span>
+                                                <Tooltip text="Store KV cache in 16-bit precision. Reduces memory usage by ~50% with minimal quality impact." />
+                                            </div>
+                                            <button
+                                                onClick={() => updateModel(model.id, 'useKVF16', !model.useKVF16)}
+                                                className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.useKVF16
+                                                    ? 'bg-emerald-600 text-white'
+                                                    : 'bg-slate-600 text-slate-300'
+                                                    }`}
+                                            >
+                                                {model.useKVF16 ? 'ON' : 'OFF'}
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => updateModel(model.id, 'useKVF16', !model.useKVF16)}
-                                            className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.useKVF16
-                                                ? 'bg-emerald-600 text-white'
-                                                : 'bg-slate-600 text-slate-300'
-                                                }`}
-                                        >
-                                            {model.useKVF16 ? 'ON' : 'OFF'}
-                                        </button>
+
+                                        <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-indigo-500/30">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-slate-200">Use Mmap</span>
+                                                <Tooltip text="Memory-mapped file access. Improves load times by mapping model directly from disk." />
+                                            </div>
+                                            <button
+                                                onClick={() => updateModel(model.id, 'useMmap', !model.useMmap)}
+                                                className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.useMmap
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'bg-slate-600 text-slate-300'
+                                                    }`}
+                                            >
+                                                {model.useMmap ? 'ON' : 'OFF'}
+                                            </button>
+                                        </div>
+
+                                        <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-orange-500/30">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-slate-200">Use Mlock</span>
+                                                <Tooltip text="Prevent model from being swapped to disk. Reserves RAM but improves performance." />
+                                            </div>
+                                            <button
+                                                onClick={() => updateModel(model.id, 'useMlock', !model.useMlock)}
+                                                className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.useMlock
+                                                    ? 'bg-orange-600 text-white'
+                                                    : 'bg-slate-600 text-slate-300'
+                                                    }`}
+                                            >
+                                                {model.useMlock ? 'ON' : 'OFF'}
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-indigo-500/30">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-200">Use Mmap</span>
-                                            <Tooltip text="Memory-mapped file access. Improves load times by mapping model directly from disk." />
-                                        </div>
-                                        <button
-                                            onClick={() => updateModel(model.id, 'useMmap', !model.useMmap)}
-                                            className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.useMmap
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-slate-600 text-slate-300'
-                                                }`}
-                                        >
-                                            {model.useMmap ? 'ON' : 'OFF'}
-                                        </button>
+                                    {/* RoPE Scaling */}
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-300 block mb-2">RoPE Scaling</label>
+                                        <LabeledInput
+                                            label={<span className="flex items-center">Frequency Base<Tooltip text="RoPE frequency base. Default 10000. Higher values allow better context extension." /></span>}
+                                            value={model.ropeFrequencyBase || 10000}
+                                            setter={v => updateModel(model.id, 'ropeFrequencyBase', v)}
+                                            min={1000}
+                                            max={1000000}
+                                            step={1000}
+                                            color="purple"
+                                            borderColor="cyan"
+                                        />
+                                        <LabeledInput
+                                            label={<span className="flex items-center">Frequency Scale<Tooltip text="RoPE frequency scale. 1.0 = default. Lower values extend context but may reduce quality." /></span>}
+                                            value={model.ropeFrequencyScale || 1.0}
+                                            setter={v => updateModel(model.id, 'ropeFrequencyScale', v)}
+                                            min={0.1}
+                                            max={2.0}
+                                            step={0.1}
+                                            color="purple"
+                                            borderColor="cyan"
+                                        />
                                     </div>
 
-                                    <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-orange-500/30">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-200">Use Mlock</span>
-                                            <Tooltip text="Prevent model from being swapped to disk. Reserves RAM but improves performance." />
+                                    {/* Thread Control */}
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-300 block mb-2">Performance</label>
+                                        <LabeledInput
+                                            label={<span className="flex items-center">CPU Threads<Tooltip text="Number of CPU threads for inference. 0 = auto-detect." /></span>}
+                                            value={model.numThreads || 0}
+                                            setter={v => updateModel(model.id, 'numThreads', v)}
+                                            min={0}
+                                            max={128}
+                                            step={1}
+                                            color="cyan"
+                                            borderColor="emerald"
+                                        />
+                                        <div className="mt-2 p-2 bg-slate-900/50 rounded border border-slate-700/50">
+                                            <p className="text-[10px] text-slate-400 leading-relaxed">
+                                                <strong className="text-yellow-400">Note:</strong> LM Studio specific settings. Optimal values depend on your hardware.
+                                            </p>
                                         </div>
-                                        <button
-                                            onClick={() => updateModel(model.id, 'useMlock', !model.useMlock)}
-                                            className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${model.useMlock
-                                                ? 'bg-orange-600 text-white'
-                                                : 'bg-slate-600 text-slate-300'
-                                                }`}
-                                        >
-                                            {model.useMlock ? 'ON' : 'OFF'}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* RoPE Scaling */}
-                                <div>
-                                    <label className="text-xs font-medium text-slate-300 block mb-2">RoPE Scaling</label>
-                                    <LabeledInput
-                                        label={<span className="flex items-center">Frequency Base<Tooltip text="RoPE frequency base. Default 10000. Higher values allow better context extension." /></span>}
-                                        value={model.ropeFrequencyBase || 10000}
-                                        setter={v => updateModel(model.id, 'ropeFrequencyBase', v)}
-                                        min={1000}
-                                        max={1000000}
-                                        step={1000}
-                                        color="purple"
-                                        borderColor="cyan"
-                                    />
-                                    <LabeledInput
-                                        label={<span className="flex items-center">Frequency Scale<Tooltip text="RoPE frequency scale. 1.0 = default. Lower values extend context but may reduce quality." /></span>}
-                                        value={model.ropeFrequencyScale || 1.0}
-                                        setter={v => updateModel(model.id, 'ropeFrequencyScale', v)}
-                                        min={0.1}
-                                        max={2.0}
-                                        step={0.1}
-                                        color="purple"
-                                        borderColor="cyan"
-                                    />
-                                </div>
-
-                                {/* Thread Control */}
-                                <div>
-                                    <label className="text-xs font-medium text-slate-300 block mb-2">Performance</label>
-                                    <LabeledInput
-                                        label={<span className="flex items-center">CPU Threads<Tooltip text="Number of CPU threads for inference. 0 = auto-detect." /></span>}
-                                        value={model.numThreads || 0}
-                                        setter={v => updateModel(model.id, 'numThreads', v)}
-                                        min={0}
-                                        max={128}
-                                        step={1}
-                                        color="cyan"
-                                        borderColor="emerald"
-                                    />
-                                    <div className="mt-2 p-2 bg-slate-900/50 rounded border border-slate-700/50">
-                                        <p className="text-[10px] text-slate-400 leading-relaxed">
-                                            <strong className="text-yellow-400">Note:</strong> LM Studio specific settings. Optimal values depend on your hardware.
-                                        </p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )
+                    }
                     {/* llama.cpp GPU Backend Selection */}
                     {
                         hardware.inferenceSoftware === 'llama.cpp' && (hardware.gpuEnabled !== false || hardware.operatingSystem === 'macos') && (
