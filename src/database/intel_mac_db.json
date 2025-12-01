@@ -1,0 +1,194 @@
+[
+    {
+        "id": "mac_pro_2019_w6800x_duo",
+        "name": "Mac Pro 2019 (Xeon W 28-core + W6800X Duo)",
+        "category": "IntelMac",
+        "generation": "Intel Mac",
+        "vram_gb": 64,
+        "bandwidth_gbps": 512,
+        "cpu_model": "Intel Xeon W-3275M",
+        "cpu_cores": 28,
+        "cpu_threads": 56,
+        "system_ram_gb": 1536,
+        "ram_type": "ddr4",
+        "ram_speed": 2933,
+        "storage_type": "nvme_gen3",
+        "storage_interface": "PCIe",
+        "isUnifiedMemory": false,
+        "supportedRuntimes": {
+            "ollama": {
+                "gpuAcceleration": false
+            },
+            "lmStudio": {
+                "supported": false,
+                "reason": "Not supported on Intel Mac"
+            }
+        },
+        "enforcedCpu": "xeon_w_3275m",
+        "enforcedStorage": "nvme_gen3",
+        "enforcedRamType": "ddr4",
+        "maxRam": 1536,
+        "type": "system",
+        "price_usd": 15000
+    },
+    {
+        "id": "mac_pro_2019_vega_ii",
+        "name": "Mac Pro 2019 (Xeon W 12-core + Vega II)",
+        "category": "IntelMac",
+        "generation": "Intel Mac",
+        "vram_gb": 32,
+        "bandwidth_gbps": 1024,
+        "cpu_model": "Intel Xeon W-3235",
+        "cpu_cores": 12,
+        "cpu_threads": 24,
+        "system_ram_gb": 96,
+        "ram_type": "ddr4",
+        "ram_speed": 2933,
+        "storage_type": "nvme_gen3",
+        "storage_interface": "PCIe",
+        "isUnifiedMemory": false,
+        "supportedRuntimes": {
+            "ollama": {
+                "gpuAcceleration": false
+            },
+            "lmStudio": {
+                "supported": false,
+                "reason": "Not supported on Intel Mac"
+            }
+        },
+        "enforcedCpu": "xeon_w_3235",
+        "enforcedStorage": "nvme_gen3",
+        "enforcedRamType": "ddr4",
+        "maxRam": 768,
+        "type": "system",
+        "price_usd": 10000
+    },
+    {
+        "id": "imac_27_2020_5700xt",
+        "name": "iMac 27\" 2020 (i9-10910 + 5700 XT)",
+        "category": "IntelMac",
+        "generation": "Intel Mac",
+        "vram_gb": 16,
+        "bandwidth_gbps": 448,
+        "cpu_model": "Intel Core i9-10910",
+        "cpu_cores": 10,
+        "cpu_threads": 20,
+        "system_ram_gb": 128,
+        "ram_type": "ddr4",
+        "ram_speed": 2666,
+        "storage_type": "nvme_gen3",
+        "storage_interface": "Soldered",
+        "isUnifiedMemory": false,
+        "supportedRuntimes": {
+            "ollama": {
+                "gpuAcceleration": false
+            },
+            "lmStudio": {
+                "supported": false,
+                "reason": "Not supported on Intel Mac"
+            }
+        },
+        "enforcedCpu": "i9_10910",
+        "enforcedStorage": "nvme_gen3",
+        "enforcedRamType": "ddr4",
+        "maxRam": 128,
+        "type": "system",
+        "price_usd": 3500
+    },
+    {
+        "id": "mbp_16_2019_5500m",
+        "name": "MacBook Pro 16\" 2019 (i9-9980HK + 5500M)",
+        "category": "IntelMac",
+        "generation": "Intel Mac",
+        "vram_gb": 8,
+        "bandwidth_gbps": 192,
+        "cpu_model": "Intel Core i9-9980HK",
+        "cpu_cores": 8,
+        "cpu_threads": 16,
+        "system_ram_gb": 64,
+        "ram_type": "ddr4",
+        "ram_speed": 2666,
+        "storage_type": "nvme_gen3",
+        "storage_interface": "Soldered",
+        "isUnifiedMemory": false,
+        "supportedRuntimes": {
+            "ollama": {
+                "gpuAcceleration": false
+            },
+            "lmStudio": {
+                "supported": false,
+                "reason": "Not supported on Intel Mac"
+            }
+        },
+        "enforcedCpu": "i9_9980hk",
+        "enforcedStorage": "nvme_gen3",
+        "enforcedRamType": "ddr4",
+        "maxRam": 64,
+        "type": "system",
+        "price_usd": 3000
+    },
+    {
+        "id": "mbp_16_2019_5300m",
+        "name": "MacBook Pro 16\" 2019 (i7-9750H + 5300M)",
+        "category": "IntelMac",
+        "generation": "Intel Mac",
+        "vram_gb": 4,
+        "bandwidth_gbps": 192,
+        "cpu_model": "Intel Core i7-9750H",
+        "cpu_cores": 6,
+        "cpu_threads": 12,
+        "system_ram_gb": 16,
+        "ram_type": "ddr4",
+        "ram_speed": 2666,
+        "storage_type": "nvme_gen3",
+        "storage_interface": "Soldered",
+        "isUnifiedMemory": false,
+        "supportedRuntimes": {
+            "ollama": {
+                "gpuAcceleration": false
+            },
+            "lmStudio": {
+                "supported": false,
+                "reason": "Not supported on Intel Mac"
+            }
+        },
+        "enforcedCpu": "i7_9750h",
+        "enforcedStorage": "nvme_gen3",
+        "enforcedRamType": "ddr4",
+        "maxRam": 64,
+        "type": "system",
+        "price_usd": 2400
+    },
+    {
+        "id": "mbp_16_2019_5600m",
+        "name": "MacBook Pro 16\" 2019 (i9-9980HK + 5600M HBM2)",
+        "category": "IntelMac",
+        "generation": "Intel Mac",
+        "vram_gb": 8,
+        "bandwidth_gbps": 394,
+        "cpu_model": "Intel Core i9-9980HK",
+        "cpu_cores": 8,
+        "cpu_threads": 16,
+        "system_ram_gb": 64,
+        "ram_type": "ddr4",
+        "ram_speed": 2666,
+        "storage_type": "nvme_gen3",
+        "storage_interface": "Soldered",
+        "isUnifiedMemory": false,
+        "supportedRuntimes": {
+            "ollama": {
+                "gpuAcceleration": false
+            },
+            "lmStudio": {
+                "supported": false,
+                "reason": "Not supported on Intel Mac"
+            }
+        },
+        "enforcedCpu": "i9_9980hk",
+        "enforcedStorage": "nvme_gen3",
+        "enforcedRamType": "ddr4",
+        "maxRam": 64,
+        "type": "system",
+        "price_usd": 3500
+    }
+]

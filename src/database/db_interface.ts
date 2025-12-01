@@ -1,6 +1,7 @@
 import gpuData from './gpu_db.json';
 import cpuData from './cpu_db.json';
 import appleSiliconData from './apple_silicon_complete.json';
+import intelMacData from './intel_mac_db.json';
 import ramData from './ram_db.json';
 import * as WASM from '../utils/wasmCalculator';
 
@@ -105,7 +106,7 @@ const SCALING_FACTORS = {
 };
 
 export const getAllHardware = (): HardwareItem[] => {
-    return [...gpuData, ...cpuData, ...appleSiliconData] as HardwareItem[];
+    return [...gpuData, ...cpuData, ...appleSiliconData, ...intelMacData] as HardwareItem[];
 };
 
 export const getHardwareDB = getAllHardware;
