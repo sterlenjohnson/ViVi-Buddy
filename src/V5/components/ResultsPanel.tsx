@@ -36,7 +36,10 @@ const StackedMemoryBar: React.FC<StackedMemoryBarProps> = ({ label, segments, ma
                         <div
                             key={idx}
                             className="h-full transition-all duration-300 relative group"
-                            style={{ width: `${width}%`, backgroundColor: (colorMap as any)[seg.color] || (colorMap as any).slate }}
+                            style={{
+                                width: `${width}%`,
+                                backgroundColor: totalPercent > 100 ? '#ef4444' : ((colorMap as any)[seg.color] || (colorMap as any).slate)
+                            }}
                         >
                             {/* Tooltip on hover */}
                             <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] rounded px-2 py-1 whitespace-nowrap z-10 pointer-events-none">

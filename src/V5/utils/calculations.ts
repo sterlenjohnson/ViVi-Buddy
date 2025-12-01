@@ -182,10 +182,18 @@ export const getContextPenalty = (models: Model[]): number => {
     // - 32768: ~0.30x
     // - 65536+: ~0.20x
 
-    // Using formula: 1.0 / (1 + (context / 10000)^1.2)
+    // Using formula: 1.0 / (1.0 + (context / 10000)^1.2)
     const penalty = 1.0 / (1.0 + Math.pow(maxContext / 10000, 1.2));
 
     return Math.max(0.15, penalty); // Minimum 0.15x (6.7x slower at extreme contexts)
+};
+
+// Helper to estimate memory usage for a given configuration
+const estimateMemoryUsageGB = (model: Model): number => {
+    const layerSize = getLayerSizeGB(model);
+    const kvSize = getKVCachePerLayerGB(model);
+    const actSize = getActivationPerLayerGB(model);
+    return (layerSize + kvSize + actSize) * model.numLayers;
 };
 
 export const optimizeLayerSplit = (model: Model, gpuList: GPU[], systemRAMAmount: number, enforceConstraints: boolean): Model => {
@@ -193,94 +201,116 @@ export const optimizeLayerSplit = (model: Model, gpuList: GPU[], systemRAMAmount
     // If Overload: YES, we allow spilling (Hybrid) or exceeding limits (with warning)
 
     let currentModel = { ...model };
+
+    // Reserve VRAM per GPU for display/overhead
+    const reservedPerGpu = 0.5;
+    const totalAvailableVram = gpuList.reduce((acc, gpu) => acc + Math.max(0, gpu.vram - reservedPerGpu), 0);
+    const totalAvailableRam = systemRAMAmount * 0.8; // Reserve 20% for OS
+
+    // Auto-Optimization Logic (Overload: NO)
+    if (enforceConstraints) {
+        let fits = false;
+        let attempts = 0;
+        const maxAttempts = 10; // Prevent infinite loops
+
+        while (!fits && attempts < maxAttempts) {
+            const requiredMem = estimateMemoryUsageGB(currentModel);
+            let limit = 0;
+
+            if (currentModel.mode === 'gpuOnly') {
+                limit = totalAvailableVram;
+            } else if (currentModel.mode === 'cpuOnly') {
+                limit = totalAvailableRam;
+            } else {
+                // Hybrid: Combined limit
+                limit = totalAvailableVram + totalAvailableRam;
+            }
+
+            if (requiredMem <= limit) {
+                fits = true;
+            } else {
+                // Downgrade Strategy:
+                // 1. Reduce Context Length (if > 2048)
+                // 2. Reduce Quantization (if > q4_0)
+                // 3. If still failing, we might have to accept it won't fit (or reduce layers as last resort, but user said "force setting to change")
+
+                attempts++;
+
+                if (currentModel.contextLength > 2048) {
+                    // Step down context
+                    const contexts = [131072, 65536, 32768, 16384, 8192, 4096, 2048];
+                    const currentIdx = contexts.indexOf(currentModel.contextLength);
+                    if (currentIdx < contexts.length - 1) {
+                        currentModel.contextLength = contexts[currentIdx + 1];
+                        continue;
+                    }
+                }
+
+                if (currentModel.precision !== 'q4_0') {
+                    // Step down quantization
+                    // Simplified hierarchy: q8_0 -> q6_k -> q5_k_m -> q4_k_m -> q4_0
+                    // We need a robust way to downgrade. For now, simple switch.
+                    if (currentModel.precision.startsWith('q8') || currentModel.precision.startsWith('fp16')) currentModel.precision = 'q6_k';
+                    else if (currentModel.precision.startsWith('q6')) currentModel.precision = 'q5_k_m';
+                    else if (currentModel.precision.startsWith('q5')) currentModel.precision = 'q4_k_m';
+                    else if (currentModel.precision.startsWith('q4_k')) currentModel.precision = 'q4_0';
+                    else if (currentModel.precision !== 'q4_0') currentModel.precision = 'q4_0'; // Fallback
+                    continue;
+                }
+
+                // If we reach here, we can't downgrade settings further. 
+                // We must break to avoid infinite loop. The model simply doesn't fit even at min settings.
+                break;
+            }
+        }
+    }
+
+    // Recalculate layer split based on (potentially modified) model
     const layerSize = getLayerSizeGB(currentModel);
     const kvSize = getKVCachePerLayerGB(currentModel);
     const actSize = getActivationPerLayerGB(currentModel);
     const vramPerLayer = layerSize + kvSize + actSize;
 
-    // Reserve VRAM per GPU for display/overhead
-    const reservedPerGpu = 0.5;
-
     let newGpuLayers = currentModel.gpuLayers;
     let newCpuLayers = currentModel.cpuLayers || 0;
 
     if (currentModel.mode === 'gpuOnly') {
+        newGpuLayers = currentModel.numLayers;
+        newCpuLayers = 0;
+
+        // If strict and still doesn't fit (after downgrade), we clamp layers as a last resort visual indication
         if (enforceConstraints) {
-            // Strict VRAM limit check
-            const totalAvailableVram = gpuList.reduce((acc, gpu) => acc + Math.max(0, gpu.vram - reservedPerGpu), 0);
             const totalRequired = vramPerLayer * currentModel.numLayers;
-
             if (totalRequired > totalAvailableVram) {
-                // Downgrade logic: Try reducing context first, then quantization
-                // This is a simplified simulation of "auto-adjust"
-                // In a real scenario, we'd iterate through presets. 
-                // For now, we just clamp layers to what fits, effectively "offloading" nothing (since it's GPU only)
-                // But wait, GPU only means NO CPU layers. So if it doesn't fit, it doesn't fit.
-                // The user said: "If overloading is setting to no then some settings will go down."
-
-                // We can't easily change quantization/context here without side effects or recursion.
-                // Instead, we will clamp layers to 0 if it doesn't fit? No, that breaks the model.
-                // We will set gpuLayers to max possible, and if it's less than numLayers, 
-                // we might need to switch to CPU or Hybrid? 
-                // But "GPU Only" implies strict GPU.
-
-                // Let's try to fit as many layers as possible.
                 const maxFittingLayers = Math.floor(totalAvailableVram / vramPerLayer);
                 newGpuLayers = Math.min(currentModel.numLayers, maxFittingLayers);
-
-                // If we can't fit all layers, and we are in strict GPU mode, 
-                // we technically can't run the full model. 
-                // But the UI needs to show something. 
-                // Let's just clamp for now. The user will see "Layers: X / Total"
-            } else {
-                newGpuLayers = currentModel.numLayers;
             }
-        } else {
-            newGpuLayers = currentModel.numLayers;
         }
-        newCpuLayers = 0;
     } else if (currentModel.mode === 'cpuOnly') {
         newGpuLayers = 0;
         newCpuLayers = currentModel.numLayers;
-        // Strict RAM check could be added here, but usually OS manages RAM swapping.
-        // We'll leave CPU mode flexible for now unless specific RAM enforcement is requested.
     } else if (currentModel.mode === 'hybrid') {
+        // Hybrid Logic: Fill VRAM first, then RAM
+        let totalLayersFittingVram = 0;
+        gpuList.forEach(gpu => {
+            const available = Math.max(0, gpu.vram - reservedPerGpu);
+            const layersOnThisGpu = Math.floor(available / vramPerLayer);
+            totalLayersFittingVram += layersOnThisGpu;
+        });
+
+        newGpuLayers = Math.min(currentModel.numLayers, totalLayersFittingVram);
+        newCpuLayers = currentModel.numLayers - newGpuLayers;
+
+        // If strict, check if RAM can hold the rest
         if (enforceConstraints) {
-            // Strict Hybrid? Usually Hybrid IS the overflow mechanism.
-            // But if "Overload: No", maybe it means "Fill VRAM, then STOP"? 
-            // Or "Fill VRAM, then fill RAM, then STOP"?
-            // User said: "Hybrid, vram first than ram."
-
-            let totalLayersFitting = 0;
-
-            // Sequential allocation simulation
-            gpuList.forEach(gpu => {
-                const available = Math.max(0, gpu.vram - reservedPerGpu);
-                const layersOnThisGpu = Math.floor(available / vramPerLayer);
-                totalLayersFitting += layersOnThisGpu;
-            });
-
-            newGpuLayers = Math.min(currentModel.numLayers, totalLayersFitting);
-            newCpuLayers = currentModel.numLayers - newGpuLayers;
-        } else {
-            // Overload Allowed: Just fill VRAM as much as possible, rest to CPU
-            // This is actually the same logic as above for Hybrid.
-            // The difference is usually in "GPU Only" mode where Overload=Yes allows spilling to RAM (effectively becoming Hybrid).
-
-            // If undefined, default balanced
-            if (!currentModel.gpuLayers && !currentModel.cpuLayers) {
-                newGpuLayers = Math.floor(currentModel.numLayers / 2);
+            const ramNeeded = newCpuLayers * vramPerLayer; // Approx
+            if (ramNeeded > totalAvailableRam) {
+                // If RAM overflows, we technically should have downgraded earlier.
+                // But if we are here, it means even min settings don't fit.
+                // We clamp CPU layers to what fits in RAM.
+                const maxCpuLayers = Math.floor(totalAvailableRam / vramPerLayer);
+                newCpuLayers = Math.min(newCpuLayers, maxCpuLayers);
             }
-
-            // Recalculate based on VRAM capacity anyway for good UX
-            let totalLayersFitting = 0;
-            gpuList.forEach(gpu => {
-                const available = Math.max(0, gpu.vram - reservedPerGpu);
-                const layersOnThisGpu = Math.floor(available / vramPerLayer);
-                totalLayersFitting += layersOnThisGpu;
-            });
-            newGpuLayers = Math.min(currentModel.numLayers, totalLayersFitting);
-            newCpuLayers = currentModel.numLayers - newGpuLayers;
         }
     }
 
