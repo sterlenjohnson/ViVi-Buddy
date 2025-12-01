@@ -49,7 +49,7 @@ const VRAMVisualizerV5: React.FC = () => {
     } = useHardware();
 
     // Local state for Model Configuration only
-    const [enforceConstraints, setEnforceConstraints] = useState<boolean>(true);
+    const [allowOverload, setAllowOverload] = useState<boolean>(true); // Default to allowing overload (flexible)
     const [models, setModels] = useState<any[]>([defaultModel]);
 
 
@@ -164,8 +164,8 @@ const VRAMVisualizerV5: React.FC = () => {
     const addModel = () => {
         const newId = Math.max(...models.map((m) => m.id), 0) + 1;
         let newM = { ...defaultModel, id: newId, name: `Model ${newId}` };
-        if (enforceConstraints) {
-            newM = optimizeLayerSplit(newM, gpuList, systemRamSize, enforceConstraints);
+        if (!allowOverload) {
+            newM = optimizeLayerSplit(newM, gpuList, systemRamSize, !allowOverload);
         }
         setModels([...models, newM]);
     };
@@ -183,13 +183,13 @@ const VRAMVisualizerV5: React.FC = () => {
                     updated.mode = 'cpuOnly';
                 }
                 if (
-                    enforceConstraints ||
+                    !allowOverload ||
                     ['mode', 'precision', 'contextLength', 'numLayers', 'gpuLayers'].includes(field)
                 ) {
                     if (field === 'numLayers' && updated.gpuLayers > value) {
                         updated.gpuLayers = value;
                     }
-                    updated = optimizeLayerSplit(updated, gpuList, systemRamSize, enforceConstraints);
+                    updated = optimizeLayerSplit(updated, gpuList, systemRamSize, !allowOverload);
                 }
                 return updated;
             })
@@ -205,12 +205,12 @@ const VRAMVisualizerV5: React.FC = () => {
         }
     }, [hasGPU]);
 
-    // Sync models when constraints toggle changes
+    // Sync models when overload toggle changes
     useEffect(() => {
-        if (enforceConstraints) {
-            setModels((prev) => prev.map((m) => optimizeLayerSplit(m, gpuList, systemRamSize, enforceConstraints)));
+        if (!allowOverload) {
+            setModels((prev) => prev.map((m) => optimizeLayerSplit(m, gpuList, systemRamSize, !allowOverload)));
         }
-    }, [enforceConstraints, gpuList, systemRamSize]);
+    }, [allowOverload, gpuList, systemRamSize]);
 
 
     // --- CALCULATIONS ---
@@ -286,15 +286,15 @@ const VRAMVisualizerV5: React.FC = () => {
     useEffect(() => {
         const config = {
             models,
-            enforceConstraints,
+            allowOverload,
         };
         localStorage.setItem('vivi_calculator_autosave', JSON.stringify(config));
-    }, [models, enforceConstraints]);
+    }, [models, allowOverload]);
 
     const saveConfig = () => {
         const config = {
             models,
-            enforceConstraints,
+            allowOverload,
         };
         localStorage.setItem('vram_visualizer_v5_config', JSON.stringify(config));
         alert('Model configuration saved!');
@@ -306,7 +306,12 @@ const VRAMVisualizerV5: React.FC = () => {
             try {
                 const config = JSON.parse(saved);
                 setModels(config.models);
-                setEnforceConstraints(config.enforceConstraints);
+                if (config.allowOverload !== undefined) {
+                    setAllowOverload(config.allowOverload);
+                } else if (config.enforceConstraints !== undefined) {
+                    // Backward compatibility
+                    setAllowOverload(!config.enforceConstraints);
+                }
                 alert('Model configuration loaded!');
             } catch (e) {
                 console.error('Failed to load config', e);
@@ -351,7 +356,7 @@ const VRAMVisualizerV5: React.FC = () => {
                         newM.contextLength = 16384;
                     }
                 }
-                return optimizeLayerSplit(newM, gpuList, systemRamSize, enforceConstraints);
+                return optimizeLayerSplit(newM, gpuList, systemRamSize, !allowOverload);
             })
         );
     };

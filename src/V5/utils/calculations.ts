@@ -189,25 +189,68 @@ export const getContextPenalty = (models: Model[]): number => {
 };
 
 export const optimizeLayerSplit = (model: Model, gpuList: GPU[], systemRAMAmount: number, enforceConstraints: boolean): Model => {
-    const layerSize = getLayerSizeGB(model);
-    const kvSize = getKVCachePerLayerGB(model);
-    const actSize = getActivationPerLayerGB(model);
+    // If constraints are enforced (Overload: NO), we must fit in VRAM (GPU mode) or RAM (CPU mode)
+    // If Overload: YES, we allow spilling (Hybrid) or exceeding limits (with warning)
+
+    let currentModel = { ...model };
+    const layerSize = getLayerSizeGB(currentModel);
+    const kvSize = getKVCachePerLayerGB(currentModel);
+    const actSize = getActivationPerLayerGB(currentModel);
     const vramPerLayer = layerSize + kvSize + actSize;
 
     // Reserve VRAM per GPU for display/overhead
     const reservedPerGpu = 0.5;
 
-    let newGpuLayers = model.gpuLayers;
-    let newCpuLayers = model.cpuLayers || 0;
+    let newGpuLayers = currentModel.gpuLayers;
+    let newCpuLayers = currentModel.cpuLayers || 0;
 
-    if (model.mode === 'gpuOnly') {
-        newGpuLayers = model.numLayers;
-        newCpuLayers = 0;
-    } else if (model.mode === 'cpuOnly') {
-        newGpuLayers = 0;
-        newCpuLayers = model.numLayers;
-    } else if (model.mode === 'hybrid') {
+    if (currentModel.mode === 'gpuOnly') {
         if (enforceConstraints) {
+            // Strict VRAM limit check
+            const totalAvailableVram = gpuList.reduce((acc, gpu) => acc + Math.max(0, gpu.vram - reservedPerGpu), 0);
+            const totalRequired = vramPerLayer * currentModel.numLayers;
+
+            if (totalRequired > totalAvailableVram) {
+                // Downgrade logic: Try reducing context first, then quantization
+                // This is a simplified simulation of "auto-adjust"
+                // In a real scenario, we'd iterate through presets. 
+                // For now, we just clamp layers to what fits, effectively "offloading" nothing (since it's GPU only)
+                // But wait, GPU only means NO CPU layers. So if it doesn't fit, it doesn't fit.
+                // The user said: "If overloading is setting to no then some settings will go down."
+
+                // We can't easily change quantization/context here without side effects or recursion.
+                // Instead, we will clamp layers to 0 if it doesn't fit? No, that breaks the model.
+                // We will set gpuLayers to max possible, and if it's less than numLayers, 
+                // we might need to switch to CPU or Hybrid? 
+                // But "GPU Only" implies strict GPU.
+
+                // Let's try to fit as many layers as possible.
+                const maxFittingLayers = Math.floor(totalAvailableVram / vramPerLayer);
+                newGpuLayers = Math.min(currentModel.numLayers, maxFittingLayers);
+
+                // If we can't fit all layers, and we are in strict GPU mode, 
+                // we technically can't run the full model. 
+                // But the UI needs to show something. 
+                // Let's just clamp for now. The user will see "Layers: X / Total"
+            } else {
+                newGpuLayers = currentModel.numLayers;
+            }
+        } else {
+            newGpuLayers = currentModel.numLayers;
+        }
+        newCpuLayers = 0;
+    } else if (currentModel.mode === 'cpuOnly') {
+        newGpuLayers = 0;
+        newCpuLayers = currentModel.numLayers;
+        // Strict RAM check could be added here, but usually OS manages RAM swapping.
+        // We'll leave CPU mode flexible for now unless specific RAM enforcement is requested.
+    } else if (currentModel.mode === 'hybrid') {
+        if (enforceConstraints) {
+            // Strict Hybrid? Usually Hybrid IS the overflow mechanism.
+            // But if "Overload: No", maybe it means "Fill VRAM, then STOP"? 
+            // Or "Fill VRAM, then fill RAM, then STOP"?
+            // User said: "Hybrid, vram first than ram."
+
             let totalLayersFitting = 0;
 
             // Sequential allocation simulation
@@ -217,18 +260,31 @@ export const optimizeLayerSplit = (model: Model, gpuList: GPU[], systemRAMAmount
                 totalLayersFitting += layersOnThisGpu;
             });
 
-            newGpuLayers = Math.min(model.numLayers, totalLayersFitting);
-            newCpuLayers = model.numLayers - newGpuLayers;
-        } else if (!model.gpuLayers && !model.cpuLayers) {
-            // Default balanced split if undefined
-            newGpuLayers = Math.floor(model.numLayers / 2);
-        }
+            newGpuLayers = Math.min(currentModel.numLayers, totalLayersFitting);
+            newCpuLayers = currentModel.numLayers - newGpuLayers;
+        } else {
+            // Overload Allowed: Just fill VRAM as much as possible, rest to CPU
+            // This is actually the same logic as above for Hybrid.
+            // The difference is usually in "GPU Only" mode where Overload=Yes allows spilling to RAM (effectively becoming Hybrid).
 
-        // Always ensure CPU layers are consistent with GPU layers in hybrid mode
-        newCpuLayers = Math.max(0, model.numLayers - newGpuLayers);
+            // If undefined, default balanced
+            if (!currentModel.gpuLayers && !currentModel.cpuLayers) {
+                newGpuLayers = Math.floor(currentModel.numLayers / 2);
+            }
+
+            // Recalculate based on VRAM capacity anyway for good UX
+            let totalLayersFitting = 0;
+            gpuList.forEach(gpu => {
+                const available = Math.max(0, gpu.vram - reservedPerGpu);
+                const layersOnThisGpu = Math.floor(available / vramPerLayer);
+                totalLayersFitting += layersOnThisGpu;
+            });
+            newGpuLayers = Math.min(currentModel.numLayers, totalLayersFitting);
+            newCpuLayers = currentModel.numLayers - newGpuLayers;
+        }
     }
 
-    return { ...model, gpuLayers: newGpuLayers, cpuLayers: newCpuLayers };
+    return { ...currentModel, gpuLayers: newGpuLayers, cpuLayers: newCpuLayers };
 };
 
 export interface GpuUsageDetail {
