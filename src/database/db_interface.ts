@@ -66,6 +66,32 @@ export interface RamOption {
     type: string;
 }
 
+// HardwareOption interface for GPU/CPU presets in the UI
+export interface HardwareOption {
+    id: string;
+    name: string;
+    vram_gb?: number;
+    bandwidth_gbps?: number;
+    category?: HardwareCategory;
+    generation?: string;
+    price_usd?: number;
+    isUnifiedMemory?: boolean;
+    cpu_model?: string;
+    cpu_cores?: number;
+    cpu_threads?: number;
+    system_ram_gb?: number;
+    ram_type?: string;
+    ram_speed?: number;
+    storage_type?: string;
+    storage_interface?: string;
+    supportedRuntimes?: RuntimeSupport;
+    enforcedCpu?: string;
+    enforcedStorage?: string;
+    enforcedRamType?: string;
+    maxRam?: number;
+    intelMacCompatible?: boolean;
+}
+
 const EFFICIENCY_FACTORS: Record<string, number> = {
     consumer: 0.60,
     enterprise: 0.75,

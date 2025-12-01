@@ -2,47 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useHardware, type OperatingSystem, type RamType, type StorageType } from '../contexts/HardwareContext';
 import { autoDetectHardware, getDetectionConfidence } from '../V5/utils/hardwareDetection';
 import { Cpu, Zap, HardDrive, Gauge, Monitor, Sparkles, Search, Server, Laptop, Settings, Lock, Sliders, X } from 'lucide-react';
-import { HARDWARE_DATABASE, type HardwareItem, type HardwareOption } from '../database/db_interface';
+import { type HardwareItem, type HardwareOption } from '../database/db_interface';
 import CPU_DATABASE from '../database/cpu_db.json';
 import CustomHardwareForm from '../components/CustomHardwareForm';
 import { SoftwareRuntimeSelector } from '../components/SoftwareRuntimeSelector';
 
-interface HardwareOption {
-    id: string;
-    name: string;
-    vram_gb?: number;
-    bandwidth_gbps?: number;
-    category: 'NVIDIA' | 'AMD' | 'Intel' | 'Apple' | 'CPU' | 'IntelMac';
-    generation?: string;
-    price_usd?: number;
-    intelMacCompatible?: boolean; // True for Radeon Pro 5000/W6800X series
-
-    // Memory Architecture
-    isUnifiedMemory?: boolean;
-
-    // Intel Mac enforcement
-    maxRam?: number;
-    enforcedCpu?: string;
-    enforcedStorage?: 'nvme_gen3' | 'nvme_gen4' | 'sata' | 'hdd';
-    enforcedRamType?: 'ddr4' | 'ddr5';
-
-    // Full System Specs (for Presets)
-    cpu_model?: string;
-    cpu_cores?: number;
-    cpu_threads?: number;
-    system_ram_gb?: number;
-    ram_type?: string;
-    ram_speed?: number;
-    storage_type?: string;
-    storage_interface?: string;
-
-    // Runtime Support
-    supportedRuntimes?: {
-        ollama?: { gpuAcceleration: boolean };
-        lmStudio?: { supported: boolean; reason?: string };
-        llamaCpp?: { gpuAcceleration: boolean };
-    };
-}
 
 type AnyHardware = HardwareOption | HardwareItem;
 
@@ -137,7 +101,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'PCIe',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'xeon_w_3275m', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 1536, ram_speed: 2933
+        enforcedCpu: 'xeon_w_3275m', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 1536
     },
     {
         id: 'mac_pro_2019_vega_ii', name: 'Mac Pro 2019 (Xeon W 12-core + Vega II)', category: 'IntelMac', generation: 'Intel Mac',
@@ -147,7 +111,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'PCIe',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'xeon_w_3235', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 768, ram_speed: 2933
+        enforcedCpu: 'xeon_w_3235', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 768
     },
     {
         id: 'imac_27_2020_5700xt', name: 'iMac 27" 2020 (i9-10910 + 5700 XT)', category: 'IntelMac', generation: 'Intel Mac',
@@ -157,7 +121,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'Soldered',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'i9_10910', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 128, ram_speed: 2666
+        enforcedCpu: 'i9_10910', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 128
     },
     {
         id: 'mbp_16_2019_5500m', name: 'MacBook Pro 16" 2019 (i9-9980HK + 5500M)', category: 'IntelMac', generation: 'Intel Mac',
@@ -167,7 +131,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'Soldered',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'i9_9980hk', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64, ram_speed: 2666
+        enforcedCpu: 'i9_9980hk', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64
     },
     {
         id: 'mbp_16_2019_5300m', name: 'MacBook Pro 16" 2019 (i7-9750H + 5300M)', category: 'IntelMac', generation: 'Intel Mac',
@@ -177,7 +141,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'Soldered',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'i7_9750h', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64, ram_speed: 2666
+        enforcedCpu: 'i7_9750h', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64
     },
     {
         id: 'mbp_16_2019_5600m', name: 'MacBook Pro 16" 2019 (i9-9980HK + 5600M HBM2)', category: 'IntelMac', generation: 'Intel Mac',
@@ -187,7 +151,7 @@ const HARDWARE_DATABASE: HardwareOption[] = [
         storage_type: 'nvme_gen3', storage_interface: 'Soldered',
         isUnifiedMemory: false,
         supportedRuntimes: { ollama: { gpuAcceleration: false }, lmStudio: { supported: false, reason: 'Not supported on Intel Mac' } },
-        enforcedCpu: 'i9_9980hk', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64, ram_speed: 2666
+        enforcedCpu: 'i9_9980hk', enforcedStorage: 'nvme_gen3', enforcedRamType: 'ddr4', maxRam: 64
     },
 
     // CPUs
@@ -256,11 +220,11 @@ const HardwareConfigPage: React.FC = () => {
             }
             // Enforce storage type
             if (selectedHwDetails.enforcedStorage && storageType !== selectedHwDetails.enforcedStorage) {
-                setStorageType(selectedHwDetails.enforcedStorage);
+                setStorageType(selectedHwDetails.enforcedStorage as StorageType);
             }
             // Enforce RAM type
             if (selectedHwDetails.enforcedRamType && ramType !== selectedHwDetails.enforcedRamType) {
-                setRamType(selectedHwDetails.enforcedRamType);
+                setRamType(selectedHwDetails.enforcedRamType as RamType);
             }
             // Enforce CPU
             if (selectedHwDetails.enforcedCpu && selectedCpuId !== selectedHwDetails.enforcedCpu) {
@@ -1198,9 +1162,19 @@ const HardwareConfigPage: React.FC = () => {
                                                 className="w-full bg-gray-900 rounded p-2 text-white border border-gray-600 focus:border-teal-500 outline-none"
                                             >
                                                 <option value="">Select CPU...</option>
-                                                {cpuList.map(cpu => (
-                                                    <option key={cpu.id} value={cpu.id}>{cpu.name}</option>
-                                                ))}
+                                                {CPU_DATABASE
+                                                    .filter(cpu => {
+                                                        if (operatingSystem === 'macos' && macChipType === 'silicon') {
+                                                            return cpu.architecture === 'Apple Silicon';
+                                                        }
+                                                        if (operatingSystem === 'macos' && macChipType === 'intel') {
+                                                            return cpu.architecture !== 'Apple Silicon' && !cpu.architecture.includes('ARM');
+                                                        }
+                                                        return cpu.architecture !== 'Apple Silicon' && !cpu.architecture.includes('ARM');
+                                                    })
+                                                    .map(cpu => (
+                                                        <option key={cpu.id} value={cpu.id}>{cpu.name}</option>
+                                                    ))}
                                             </select>
                                         </div>
                                     </>
