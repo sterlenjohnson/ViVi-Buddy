@@ -179,9 +179,47 @@ const VRAMVisualizerV5: React.FC = () => {
             prev.map((model) => {
                 if (model.id !== id) return model;
                 let updated = { ...model, [field]: value };
+
                 if (!hasGPU && field === 'mode' && value !== 'cpuOnly') {
                     updated.mode = 'cpuOnly';
                 }
+
+                // OVERLOAD=NO ENFORCEMENT: Cap inputs before optimization
+                if (!allowOverload) {
+                    const totalVRAM = gpuList.reduce((sum, gpu) => sum + gpu.vram, 0);
+                    const availableVRAM = Math.max(0, totalVRAM - 2); // Reserve 2GB overhead
+                    const availableRAM = systemRamSize * 0.75; // Reserve 25% for OS
+
+                    // Cap model size based on mode and available memory
+                    if (field === 'modelSize') {
+                        let maxSize = 7; // Default conservative
+
+                        if (updated.mode === 'gpuOnly' && availableVRAM > 0) {
+                            // Rough estimate: ~0.5 GB per B param for q4
+                            maxSize = Math.floor(availableVRAM / 0.6);
+                        } else if (updated.mode === 'hybrid') {
+                            maxSize = Math.floor((availableVRAM + availableRAM) / 0.6);
+                        } else if (updated.mode === 'cpuOnly') {
+                            maxSize = Math.floor(availableRAM / 0.6);
+                        }
+
+                        updated.modelSize = Math.min(value, maxSize);
+                    }
+
+                    // Cap context length based on VRAM
+                    if (field === 'contextLength') {
+                        let maxContext = 4096; // Conservative default
+
+                        if (availableVRAM >= 16) {
+                            maxContext = 32768;
+                        } else if (availableVRAM >= 8) {
+                            maxContext = 8192;
+                        }
+
+                        updated.contextLength = Math.min(value, maxContext);
+                    }
+                }
+
                 if (
                     !allowOverload ||
                     ['mode', 'precision', 'contextLength', 'numLayers', 'gpuLayers'].includes(field)
