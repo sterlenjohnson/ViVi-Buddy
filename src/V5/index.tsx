@@ -152,7 +152,7 @@ const VRAMVisualizerV5: React.FC = () => {
 
     // Derived values
     const numGPUs = gpuList.length;
-    const isUnified = operatingSystem === 'macos';
+    const isUnified = chipType === 'appleSilicon';
     const hasGPU = isUnified || (gpuList.length > 0 && gpuVendor !== 'cpu');
 
     // Navigation helper
